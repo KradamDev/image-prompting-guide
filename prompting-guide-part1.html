@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Image Prompting — Part I: The Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #06080f;
+    --bg2:      #0c1018;
+    --bg3:      #111722;
+    --cyan:     #00e5ff;
+    --cyan-dim: #00e5ff44;
+    --amber:    #ffb300;
+    --amber-dim:#ffb30033;
+    --rose:     #ff4d6d;
+    --text:     #c8d6e5;
+    --text-dim: #6b7f96;
+    --border:   #1e2d40;
+    --glow-c:   0 0 20px #00e5ff55, 0 0 60px #00e5ff22;
+    --glow-a:   0 0 20px #ffb30055, 0 0 60px #ffb30022;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: -20%;
+    width: 80vw;
+    height: 80vw;
+    background: radial-gradient(circle, #00e5ff0a 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 0 40px;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    background: #00e5ff0a;
+    border-radius: 4px;
+    padding: 6px 14px;
+    margin-bottom: 32px;
+    width: fit-content;
+    animation: fadein 0.8s ease both;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: #fff;
+    animation: fadein 0.8s 0.1s ease both;
+  }
+
+  .hero-title .accent { color: var(--cyan); text-shadow: var(--glow-c); }
+
+  .hero-subtitle {
+    margin-top: 22px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    max-width: 540px;
+    animation: fadein 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    animation: fadein 0.8s 0.3s ease both;
+  }
+
+  .hero-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .hero-meta-item span {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    animation: fadein 1s 0.8s ease both;
+  }
+
+  .scroll-hint::before {
+    content: '';
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--cyan));
+    animation: slidedown 1.6s ease infinite;
+  }
+
+  @keyframes slidedown {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 64px 0 48px;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  .divider-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .section-body {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .section-body p + p { margin-top: 16px; }
+
+  strong { color: #fff; font-weight: 600; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: #2a3f58; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--cyan), transparent);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .card.amber::before {
+    background: linear-gradient(to bottom, var(--amber), transparent);
+  }
+
+  .card.rose::before {
+    background: linear-gradient(to bottom, var(--rose), transparent);
+  }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .card.amber .card-label { color: var(--amber); }
+  .card.rose  .card-label { color: var(--rose);  }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  /* ── TWO-COL COMPARE ── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  @media (max-width: 600px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+
+  .compare-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+
+  .compare-box h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-box.pro h4 { color: var(--cyan); border-color: var(--cyan-dim); }
+  .compare-box.con h4 { color: var(--rose); border-color: #ff4d6d33; }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #a8c0d8;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .line-label {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .code-block .hl   { color: var(--cyan); }
+  .code-block .hlA  { color: var(--amber); }
+  .code-block .hlR  { color: var(--rose); }
+  .code-block .hlG  { color: #69db7c; }
+  .code-block .dim  { color: var(--text-dim); }
+  .code-block .comment { color: #3d5470; font-style: italic; }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    border: 1px solid var(--cyan-dim);
+    background: #00e5ff07;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .highlight-box .icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .highlight-box.tip   { border-color: #00e5ff44; background: #00e5ff07; }
+  .highlight-box.warn  { border-color: #ffb30044; background: #ffb30007; }
+
+  /* ── WEIGHT TABLE ── */
+  .weight-demo {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+
+  .weight-demo-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .weight-row {
+    display: grid;
+    grid-template-columns: 200px 1fr auto;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid #0e1621;
+    gap: 16px;
+  }
+
+  .weight-row:last-child { border-bottom: none; }
+
+  .weight-syntax {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .weight-bar-wrap {
+    height: 8px;
+    background: #0e1621;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .weight-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .weight-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+    min-width: 60px;
+  }
+
+  /* ── ORDER DIAGRAM ── */
+  .order-diagram {
+    display: flex;
+    gap: 0;
+    margin: 28px 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .order-segment {
+    flex: 1;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+  }
+
+  .order-segment:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .order-segment.strong { background: #001f2e; }
+  .order-segment.medium { background: #0c1018; }
+  .order-segment.weak   { background: #08090d; }
+
+  .order-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .order-rank {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .order-segment.strong .order-rank { color: var(--cyan); text-shadow: var(--glow-c); }
+  .order-segment.medium .order-rank { color: var(--amber); }
+  .order-segment.weak   .order-rank { color: var(--text-dim); }
+
+  .order-name {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── STEP LIST ── */
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    border: 1px solid #00e5ff33;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-list li p { color: var(--text); font-size: 0.97rem; }
+  .step-list li strong { color: #fff; }
+
+  /* ── PROMPT ANATOMY ── */
+  .anatomy {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 28px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    line-height: 2;
+  }
+
+  .anatomy-word {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin: 3px 2px;
+    cursor: default;
+    transition: transform 0.2s;
+  }
+
+  .anatomy-word:hover { transform: translateY(-2px); }
+
+  .anatomy-word.subject  { background: #001f2e; color: var(--cyan); border: 1px solid var(--cyan-dim); }
+  .anatomy-word.style    { background: #1f1200; color: var(--amber); border: 1px solid var(--amber-dim); }
+  .anatomy-word.quality  { background: #1a0a0f; color: var(--rose); border: 1px solid #ff4d6d33; }
+  .anatomy-word.setting  { background: #0d1f10; color: #69db7c; border: 1px solid #69db7c33; }
+
+  .anatomy-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--cyan);
+    padding: 6px 0 6px 20px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  .callout.amber { border-color: var(--amber); }
+
+  /* ── FOOTER ── */
+  .guide-footer {
+    margin-top: 100px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-part {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .footer-next {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .guide-progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 3px;
+    background: transparent;
+    z-index: 100;
+  }
+
+  .guide-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--cyan), var(--amber));
+    box-shadow: 0 0 10px var(--cyan);
+    transition: width 0.1s linear;
+  }
+
+  /* ── NAV ── */
+  .top-nav {
+    position: fixed;
+    top: 12px;
+    right: 28px;
+    z-index: 99;
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .nav-dot.active {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* ── SECTION APPEAR ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   SHARED GUIDE HEADER — added by the site build.
+   Everything below is new; the original stylesheet is untouched.
+   ═══════════════════════════════════════════════════════════ */
+:root { --ipg-h: 56px; --ipg-accent: #00e5ff; }
+
+body { padding-top: var(--ipg-h); }
+.hero { min-height: calc(100vh - var(--ipg-h)); }
+.guide-progress { top: var(--ipg-h); }
+.top-nav { top: calc(var(--ipg-h) + 16px); }
+section[id], .divider[id], .hero[id] { scroll-margin-top: calc(var(--ipg-h) + 24px); }
+
+.ipg-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ipg-h);
+  z-index: 200;
+  background: rgba(6, 8, 15, 0.82);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.ipg-header-inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ipg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #e8f2fb;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.ipg-brand:hover, .ipg-brand:focus-visible { color: var(--ipg-accent); }
+.ipg-brand-mark {
+  color: var(--ipg-accent);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-shadow: 0 0 12px var(--ipg-accent);
+}
+.ipg-parts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ipg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 999px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.ipg-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  color: #c8d6e5;
+  transition: color 0.22s;
+}
+.ipg-pill:hover, .ipg-pill:focus-visible {
+  color: #e8f2fb;
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(0, 229, 255, 0.06);
+  outline: none;
+}
+.ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+.ipg-pill.is-active {
+  color: var(--ipg-accent);
+  border-color: var(--ipg-accent);
+  background: color-mix(in srgb, var(--ipg-accent) 12%, transparent);
+  box-shadow: 0 0 18px -4px var(--ipg-accent);
+  cursor: default;
+}
+.ipg-pill.is-active .ipg-num { color: var(--ipg-accent); }
+
+@media (max-width: 760px) {
+  .ipg-header-inner { padding: 0 14px; gap: 10px; }
+  .ipg-brand-text { display: none; }
+  .ipg-pill { padding: 7px 11px; gap: 0; }
+  .ipg-label { display: none; }
+}
+@media (max-width: 420px) {
+  .ipg-brand { display: none; }
+  .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+
+<!-- Shared guide navigation (added by the site build) -->
+<header class="ipg-header">
+  <div class="ipg-header-inner">
+    <a class="ipg-brand" href="index.html" title="Guide index">
+      <span class="ipg-brand-mark" aria-hidden="true">&#9670;</span>
+      <span class="ipg-brand-text">Image Prompting Guide</span>
+    </a>
+    <nav class="ipg-parts" aria-label="Guide parts">
+      <a class="ipg-pill is-active" href="prompting-guide-part1.html" aria-current="page"><span class="ipg-num">1</span><span class="ipg-label">Foundations</span></a>
+      <a class="ipg-pill" href="prompting-guide-part2.html"><span class="ipg-num">2</span><span class="ipg-label">Settings</span></a>
+      <a class="ipg-pill" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
+      <a class="ipg-pill" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
+    </nav>
+  </div>
+</header>
+
+<!-- Progress bar -->
+<div class="guide-progress">
+  <div class="guide-progress-bar" id="progressBar"></div>
+</div>
+
+<!-- Nav dots -->
+<nav class="top-nav" id="navDots"></nav>
+
+<div class="page-wrap">
+
+  <!-- ════════ HERO ════════ -->
+  <section class="hero" id="s0">
+    <div class="badge">Part I of IV &nbsp;·&nbsp; Foundations</div>
+    <h1 class="hero-title">The Art of <span class="accent">Prompting</span><br/>AI Image Models</h1>
+    <p class="hero-subtitle">A structured, beginner-friendly guide to communicating with AI image generators — from your very first prompt to nuanced creative control.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">LEVEL<span>Beginner</span></div>
+      <div class="hero-meta-item">SECTIONS<span>5 in Part I</span></div>
+      <div class="hero-meta-item">FOCUS<span>Core Mechanics</span></div>
+    </div>
+    <div class="scroll-hint">scroll to begin</div>
+  </section>
+
+  <!-- ════════ DIVIDER ════════ -->
+  <div class="divider reveal" id="s1">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 01 — What Is a Prompt?</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ════════ SECTION 1 ════════ -->
+  <section class="reveal">
+    <span class="section-num">01 / UNDERSTANDING PROMPTS</span>
+    <h2 class="section-title">Your Words Are the Paintbrush</h2>
+    <div class="section-body">
+      <p>An AI image generator does not think visually — it thinks linguistically. When you describe an image in text, the model interprets your words, cross-references patterns learned from millions of images, and constructs a visual output. The text you write to guide this process is called a <strong>prompt</strong>.</p>
+      <p>Think of a prompt as giving detailed directions to a highly capable but entirely literal assistant. The more precise and structured your instructions, the closer the result will match your mental image. A vague prompt produces a vague image; a focused prompt produces a focused one.</p>
+    </div>
+
+    <div class="anatomy">
+      <span class="anatomy-word subject">1girl</span>
+      <span class="anatomy-word subject">warrior princess</span>
+      <span class="dim">,</span>
+      <span class="anatomy-word setting">ancient battlefield</span>
+      <span class="dim">,</span>
+      <span class="anatomy-word setting">sunset</span>
+      <span class="dim">,</span>
+      <span class="anatomy-word style">watercolor medium</span>
+      <span class="dim">,</span>
+      <span class="anatomy-word quality">best quality</span>
+      <span class="dim">,</span>
+      <span class="anatomy-word quality">very aesthetic</span>
+
+      <div class="anatomy-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5ff"></div>Subject</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#69db7c"></div>Setting</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffb300"></div>Style</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff4d6d"></div>Quality</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>Every prompt is really a combination of several layers: <strong>what</strong> exists in the scene (subjects and objects), <strong>where</strong> it is (setting and background), <strong>how</strong> it looks (style and medium), and <strong>how good</strong> it should be (quality tags). Keeping these layers in mind as you write will dramatically improve your results from the start.</p>
+    </div>
+
+    <div class="highlight-box tip">
+      <span class="icon">💡</span>
+      <div>The AI reads your prompt from left to right, and the elements you mention <strong>first carry the most weight</strong>. Always open with what matters most — usually your subject.</div>
+    </div>
+  </section>
+
+  <!-- ════════ DIVIDER ════════ -->
+  <div class="divider reveal" id="s2">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 02 — Prose vs. Tags</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ════════ SECTION 2 ════════ -->
+  <section class="reveal">
+    <span class="section-num">02 / TWO APPROACHES</span>
+    <h2 class="section-title">Prose vs. Tags — Choosing Your Language</h2>
+    <div class="section-body">
+      <p>You can communicate with an image model using two distinct styles of writing. Both are valid, but they produce noticeably different results — and understanding the difference is one of the first real skills to develop as a prompter.</p>
+    </div>
+
+    <div class="compare">
+      <div class="compare-box pro">
+        <h4>✦ Tag-Based (Recommended)</h4>
+        <div class="code-block" style="margin:0; font-size:12.5px; padding:16px 18px;">
+<span class="hl">1girl</span>, <span class="hlA">long silver hair</span>,
+<span class="hl">green eyes</span>, <span class="hlG">enchanted forest</span>,
+<span class="hlA">moonlight</span>, <span class="hlR">best quality</span>,
+<span class="hl">very aesthetic</span>
+        </div>
+        <p style="margin-top:14px; font-size:0.92rem;">Short, comma-separated descriptors. Each tag is a direct, unambiguous instruction the model handles efficiently. The AI is trained on data structured this way, so it interprets tags with high precision.</p>
+      </div>
+      <div class="compare-box con">
+        <h4>✕ Prose-Based (Less Efficient)</h4>
+        <div class="code-block" style="margin:0; font-size:12.5px; padding:16px 18px;">
+<span class="dim">"A young girl with long silver
+hair and green eyes is standing
+in an enchanted forest bathed
+in beautiful moonlight."</span>
+        </div>
+        <p style="margin-top:14px; font-size:0.92rem;">Natural sentences are intuitive, but filler words like "is," "and," "in," and "a" consume token space without adding visual meaning. The model also parses sentence structure less reliably than tags.</p>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>The rule of thumb is straightforward: if a word does not describe something you can <em>see</em> in the image, it is probably taking up space without contributing. Nouns, adjectives, and specific visual descriptors are your most powerful tools.</p>
+    </div>
+
+    <div class="callout">
+      "As you type, the AI may offer tag suggestions. The more opaque or bright the suggestion indicator, the better the model understands that tag — prioritize those for more predictable results."
+    </div>
+  </section>
+
+  <!-- ════════ DIVIDER ════════ -->
+  <div class="divider reveal" id="s3">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 03 — Token Limits & Prompt Order</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ════════ SECTION 3 ════════ -->
+  <section class="reveal">
+    <span class="section-num">03 / STRUCTURE & LIMITS</span>
+    <h2 class="section-title">How the AI Reads Your Prompt</h2>
+    <div class="section-body">
+      <p>Every AI model has a maximum number of <strong>tokens</strong> it can process per prompt. A token is roughly one word or word-fragment. Exceeding this limit causes the model to silently discard the overflow — meaning the tags you placed at the very end may simply be ignored.</p>
+      <p>Most interfaces display a progress bar as you type, showing how much of your token budget remains. Keep an eye on it. More importantly, make every word earn its place: long or redundant prompts do not improve quality, they just waste budget.</p>
+    </div>
+
+    <div class="card">
+      <span class="card-label">Token Budget Strategy</span>
+      <div class="section-body">
+        <p>A practical way to think about your token budget is to divide your prompt into tiers by importance, then write accordingly:</p>
+      </div>
+      <ul class="step-list" style="margin-top:18px;">
+        <li><p><strong>Subject first.</strong> State who or what the image is about — character type, count, defining features.</p></li>
+        <li><p><strong>Setting second.</strong> Where the scene takes place — environment, background, lighting, time of day.</p></li>
+        <li><p><strong>Style third.</strong> Artistic medium, era, rendering style, camera angle.</p></li>
+        <li><p><strong>Quality last.</strong> Broad quality enhancers like <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">best quality</code> or <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">very aesthetic</code> go at the end — they are effective even when placed there.</p></li>
+      </ul>
+    </div>
+
+    <h3 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#fff;margin:36px 0 16px;font-weight:700;">Prompt Order — Why Position Matters</h3>
+
+    <div class="section-body">
+      <p>The AI does not treat all parts of your prompt equally. Elements placed earlier exert a stronger influence on the final image. This is especially true in anime-style models, where tag order is a documented, deliberate feature of the training.</p>
+    </div>
+
+    <div class="order-diagram">
+      <div class="order-segment strong">
+        <span class="order-icon">🎯</span>
+        <span class="order-rank">#1</span>
+        <div class="order-name">First Position<br/>Strongest Influence</div>
+      </div>
+      <div class="order-segment medium">
+        <span class="order-icon">⚡</span>
+        <span class="order-rank">#2</span>
+        <div class="order-name">Mid Prompt<br/>Solid Influence</div>
+      </div>
+      <div class="order-segment weak">
+        <span class="order-icon">〰</span>
+        <span class="order-rank">#3</span>
+        <div class="order-name">Late Prompt<br/>Weakest Influence</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Good Order ✓</span>
+<span class="hl">1girl</span>, <span class="hl">warrior princess</span>, <span class="hlG">ancient battlefield</span>, <span class="hlA">sunset lighting</span>, <span class="hlA">medieval armor</span>, <span class="hlR">best quality</span>
+<br/><br/>
+      <span class="comment">// Subject → Setting → Style → Quality</span>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Poor Order ✗</span>
+<span class="hlR">best quality</span>, <span class="hlA">sunset lighting</span>, <span class="hlA">medieval armor</span>, <span class="hlG">ancient battlefield</span>, <span class="hl">1girl</span>, <span class="hl">warrior princess</span>
+<br/><br/>
+      <span class="comment">// Quality and environment push the subject to the back — results suffer</span>
+    </div>
+
+    <div class="highlight-box warn">
+      <span class="icon">⚠️</span>
+      <div>Experiment with rearranging tags when a generation doesn't match your expectations. Simply moving your primary subject tag to the very front can dramatically change the output — without changing any other word.</div>
+    </div>
+  </section>
+
+  <!-- ════════ DIVIDER ════════ -->
+  <div class="divider reveal" id="s4">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 04 — Emphasis Control</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ════════ SECTION 4 ════════ -->
+  <section class="reveal">
+    <span class="section-num">04 / EMPHASIS CONTROL</span>
+    <h2 class="section-title">Strengthening &amp; Weakening Tags</h2>
+    <div class="section-body">
+      <p>Beyond position, you have a powerful second lever for controlling how much attention the AI pays to any given element: <strong>weight vectors</strong>. Using curly braces <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">{}</code> and square brackets <code style="font-family:'IBM Plex Mono',monospace;color:var(--amber)">[]</code>, you can amplify or suppress specific parts of your prompt.</p>
+    </div>
+
+    <div class="weight-demo">
+      <div class="weight-demo-header">
+        <span>Syntax</span>
+        <span>Relative Influence on Output</span>
+        <span>Multiplier</span>
+      </div>
+
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text-dim)">[[[</span><span style="color:var(--rose)">tag</span><span style="color:var(--text-dim)">]]]</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:10%;background:#ff4d6d55;"></div></div>
+        <div class="weight-label" style="color:var(--rose)">× 0.86</div>
+      </div>
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text-dim)">[</span><span style="color:var(--rose)">tag</span><span style="color:var(--text-dim)">]</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:30%;background:#ff4d6d88;"></div></div>
+        <div class="weight-label" style="color:var(--rose)">× 0.95</div>
+      </div>
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text)">tag</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:52%;background:#4a6fa5;"></div></div>
+        <div class="weight-label">× 1.00</div>
+      </div>
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text-dim)">{</span><span style="color:var(--cyan)">tag</span><span style="color:var(--text-dim)">}</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:68%;background:#00e5ff77;"></div></div>
+        <div class="weight-label" style="color:var(--cyan)">× 1.05</div>
+      </div>
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text-dim)">{{</span><span style="color:var(--cyan)">tag</span><span style="color:var(--text-dim)">}}</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:82%;background:#00e5ffaa;"></div></div>
+        <div class="weight-label" style="color:var(--cyan)">× 1.10</div>
+      </div>
+      <div class="weight-row">
+        <div class="weight-syntax"><span style="color:var(--text-dim)">{{{</span><span style="color:var(--cyan)">tag</span><span style="color:var(--text-dim)">}}}</span></div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:98%;background:linear-gradient(to right,#00e5ff,#fff);box-shadow:0 0 8px #00e5ff55;"></div></div>
+        <div class="weight-label" style="color:var(--cyan)">× 1.16</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>Each additional pair of braces multiplies or divides the element's weight by approximately 1.05. These effects are <strong>cumulative</strong>, so nesting three pairs delivers roughly a 16% boost. The math is less important than developing an intuition for when to use it.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Example</span>
+<span class="comment">// Without emphasis — chibi style appears, but may be subtle</span>
+<span class="hl">1girl</span>, black hair, <span class="dim">chibi</span>, catgirl under a cherry blossom tree
+
+<span class="comment">// Strongly emphasized — chibi is the dominant visual style</span>
+<span class="hl">1girl</span>, black hair, <span class="hl">{{{chibi}}}</span>, catgirl under a cherry blossom tree
+
+<span class="comment">// Deliberately suppressed — chibi barely registers</span>
+<span class="hl">1girl</span>, black hair, <span class="hlR">[[[chibi]]]</span>, catgirl under a cherry blossom tree
+    </div>
+
+    <div class="card amber">
+      <span class="card-label">Important Rule</span>
+      <div class="card-title">The Undesired Content Field Reverses This Logic</div>
+      <div class="section-body" style="font-size:0.95rem;">
+        <p>Every image generator provides an "Undesired Content" or "Negative Prompt" field — a place to list elements you want the AI to <em>avoid</em>. When you place braces inside this field, the behavior flips: <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">{watermark}</code> means "avoid this very strongly," while <code style="font-family:'IBM Plex Mono',monospace;color:var(--rose)">[text]</code> means "avoid this only slightly." Always account for this reversal.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ DIVIDER ════════ -->
+  <div class="divider reveal" id="s5">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 05 — Your First Prompt</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ════════ SECTION 5 ════════ -->
+  <section class="reveal">
+    <span class="section-num">05 / PUTTING IT TOGETHER</span>
+    <h2 class="section-title">Building Your First Structured Prompt</h2>
+    <div class="section-body">
+      <p>With the four concepts above in mind — layer structure, tag-based writing, prompt order, and emphasis control — you are ready to construct a real prompt from scratch. The following walkthrough builds one layer at a time, showing how each addition shapes the final output.</p>
+    </div>
+
+    <div class="card">
+      <span class="card-label">Goal — A Fantasy Background Scene</span>
+      <ul class="step-list">
+        <li>
+          <p><strong>Start with the subject.</strong> Since we want no characters, we use the explicit tag:<br/>
+          <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">no humans</code></p>
+        </li>
+        <li>
+          <p><strong>Define the setting.</strong> Add the main environment and atmospheric condition:<br/>
+          <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">no humans, flower field, sunset</code></p>
+        </li>
+        <li>
+          <p><strong>Specify the artistic style.</strong> Apply a medium tag to shape the visual feel:<br/>
+          <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">no humans, flower field, sunset, watercolor medium</code></p>
+        </li>
+        <li>
+          <p><strong>Add quality and aesthetic tags.</strong> Place these last to polish the result:<br/>
+          <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">no humans, flower field, sunset, watercolor medium, best quality, very aesthetic</code></p>
+        </li>
+        <li>
+          <p><strong>Optionally, emphasize the focal element.</strong> Wrap your most important setting tag:<br/>
+          <code style="font-family:'IBM Plex Mono',monospace;color:var(--cyan)">no humans, <span style="color:#fff">{{{flower field}}}</span>, sunset, watercolor medium, best quality, very aesthetic</code></p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Final Prompt</span>
+<span class="hlR">no humans</span>, <span class="hl">{{{flower field}}}</span>, <span class="hlA">sunset</span>, <span class="hlA">watercolor medium</span>, <span class="hlR">best quality</span>, <span class="hlR">very aesthetic</span>
+    </div>
+
+    <div class="section-body">
+      <p>You now have a prompt that respects all four foundational principles: it uses tags instead of prose, follows a logical layer order, stays comfortably within token limits, and applies emphasis where it will be most effective. That is a stronger foundation than most beginners start with.</p>
+    </div>
+
+    <div class="callout amber">
+      "The key to improving your prompts is iteration. Generate, observe where the output diverges from your intention, adjust one thing at a time, and regenerate. Prompting is a feedback loop — not a one-shot process."
+    </div>
+
+    <div class="card rose" style="margin-top:36px;">
+      <span class="card-label">Part I — Summary</span>
+      <div class="card-title">Core Concepts to Remember</div>
+      <ul class="step-list" style="margin-top:12px;">
+        <li><p><strong>Prompts are layered.</strong> Subject → Setting → Style → Quality is the recommended order.</p></li>
+        <li><p><strong>Tags outperform prose.</strong> Concise descriptors are processed more reliably than full sentences.</p></li>
+        <li><p><strong>Position determines priority.</strong> Earlier tags carry more influence on the final image.</p></li>
+        <li><p><strong>{ } and [ ] give you fine control.</strong> Nest them carefully to amplify or suppress any element.</p></li>
+        <li><p><strong>Iterate deliberately.</strong> Change one variable at a time to understand what each tag contributes.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ════════ FOOTER ════════ -->
+  <footer class="guide-footer reveal">
+    <div class="footer-part">
+      <div style="font-family:'Orbitron',monospace;color:var(--text-dim);font-size:10px;letter-spacing:0.2em;">PART I OF IV</div>
+      <div style="margin-top:6px;color:var(--text-dim);font-size:12px;">Foundations · Complete</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:6px;">COMING NEXT</div>
+      <div class="footer-next">Part II → Settings &amp; Controls</div>
+    </div>
+  </footer>
+
+</div><!-- /page-wrap -->
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = Math.min(pct, 100) + '%';
+  });
+
+  // Section reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => obs.observe(r));
+
+  // Nav dots
+  const sections = ['s0','s1','s2','s3','s4','s5'];
+  const navEl = document.getElementById('navDots');
+  sections.forEach((id, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.title = ['Hero','What is a Prompt?','Prose vs Tags','Token Limits','Emphasis','First Prompt'][i];
+    dot.onclick = () => document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+    navEl.appendChild(dot);
+  });
+
+  const sectionEls = sections.map(id => document.getElementById(id));
+  const dotEls = navEl.querySelectorAll('.nav-dot');
+
+  const dotObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      const i = sectionEls.indexOf(e.target);
+      if (i >= 0 && e.isIntersecting) {
+        dotEls.forEach(d => d.classList.remove('active'));
+        dotEls[i]?.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -40% 0px' });
+
+  sectionEls.forEach(el => el && dotObs.observe(el));
+</script>
+</body>
+</html>
