@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Image Prompting — Part III: Advanced Techniques & Character Creation</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #06080f;
+    --bg2:       #0c1018;
+    --bg3:       #111722;
+    --cyan:      #00e5ff;
+    --cyan-dim:  #00e5ff44;
+    --amber:     #ffb300;
+    --amber-dim: #ffb30033;
+    --rose:      #ff4d6d;
+    --rose-dim:  #ff4d6d44;
+    --green:     #00e676;
+    --green-dim: #00e67644;
+    --text:      #c8d6e5;
+    --text-dim:  #6b7f96;
+    --border:    #1e2d40;
+    --glow-g:    0 0 20px #00e67655, 0 0 60px #00e67622;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    left: -20%;
+    width: 80vw;
+    height: 80vw;
+    background: radial-gradient(circle, #00e67608 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 0 40px;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    border: 1px solid var(--green-dim);
+    background: #00e67609;
+    border-radius: 4px;
+    padding: 6px 14px;
+    margin-bottom: 32px;
+    width: fit-content;
+    animation: fadein 0.8s ease both;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.2rem, 5.5vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: #fff;
+    animation: fadein 0.8s 0.1s ease both;
+  }
+
+  .hero-title .accent { color: var(--green); text-shadow: var(--glow-g); }
+
+  .hero-subtitle {
+    margin-top: 22px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    max-width: 580px;
+    animation: fadein 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    animation: fadein 0.8s 0.3s ease both;
+  }
+
+  .hero-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .hero-meta-item span {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px; left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    animation: fadein 1s 0.8s ease both;
+  }
+
+  .scroll-hint::before {
+    content: '';
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--green));
+    animation: slidedown 1.6s ease infinite;
+  }
+
+  @keyframes slidedown {
+    0%  { transform:scaleY(0); transform-origin:top; }
+    50% { transform:scaleY(1); transform-origin:top; }
+    51% { transform:scaleY(1); transform-origin:bottom; }
+    100%{ transform:scaleY(0); transform-origin:bottom; }
+  }
+
+  @keyframes fadein {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 64px 0 48px;
+  }
+
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  .divider-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--green);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .section-body { color: var(--text); font-size: 1rem; }
+  .section-body p + p { margin-top: 16px; }
+
+  strong { color: #fff; font-weight: 600; }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--cyan);
+    background: #00e5ff0d;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  code.green  { color: var(--green);  background: #00e6760d; }
+  code.amber  { color: var(--amber);  background: #ffb3000d; }
+  code.rose   { color: var(--rose);   background: #ff4d6d0d; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: #2a3f58; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--green), transparent);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .card.cyan::before   { background: linear-gradient(to bottom, var(--cyan), transparent); }
+  .card.amber::before  { background: linear-gradient(to bottom, var(--amber), transparent); }
+  .card.rose::before   { background: linear-gradient(to bottom, var(--rose), transparent); }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .card.cyan  .card-label { color: var(--cyan); }
+  .card.amber .card-label { color: var(--amber); }
+  .card.rose  .card-label { color: var(--rose); }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: #a8c0d8;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .line-label {
+    position: absolute;
+    top: 12px; right: 16px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .code-block .hl   { color: var(--cyan); }
+  .code-block .hlA  { color: var(--amber); }
+  .code-block .hlR  { color: var(--rose); }
+  .code-block .hlG  { color: var(--green); }
+  .code-block .dim  { color: var(--text-dim); }
+  .code-block .comment { color: #3d5470; font-style: italic; }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .highlight-box .icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .highlight-box.tip  { border: 1px solid #00e5ff44; background: #00e5ff07; }
+  .highlight-box.warn { border: 1px solid #ffb30044; background: #ffb30007; }
+  .highlight-box.info { border: 1px solid #00e67633; background: #00e67607; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--green);
+    padding: 6px 0 6px 20px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  .callout.amber { border-color: var(--amber); }
+  .callout.cyan  { border-color: var(--cyan); }
+
+  /* ── TAG CLOUDS ── */
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text-dim);
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    cursor: default;
+    white-space: nowrap;
+  }
+
+  .tag:hover { border-color: var(--green-dim); color: var(--green); background: #00e67608; }
+  .tag.cyan:hover  { border-color: var(--cyan-dim);  color: var(--cyan);  background: #00e5ff08; }
+  .tag.amber:hover { border-color: var(--amber-dim); color: var(--amber); background: #ffb30008; }
+  .tag.rose:hover  { border-color: var(--rose-dim);  color: var(--rose);  background: #ff4d6d08; }
+
+  .tag-group { margin: 22px 0; }
+
+  .tag-group-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── CHARACTER BUILDER ── */
+  .char-builder {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+
+  .char-builder-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .char-builder-header span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .char-builder-header .step-badge {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid #00e67633;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 10px;
+  }
+
+  .char-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    border-bottom: 1px solid #0e1621;
+  }
+
+  .char-row:last-child { border-bottom: none; }
+
+  .char-row-label {
+    padding: 16px 20px;
+    border-right: 1px solid #0e1621;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    background: var(--bg3);
+  }
+
+  .char-row-tags {
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* ── STEP LIST ── */
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid #00e67633;
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-list li p { color: var(--text); font-size: 0.97rem; }
+
+  /* ── DUAL PANEL ── */
+  .dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  @media(max-width:600px){ .dual { grid-template-columns: 1fr; } }
+
+  .dual-panel {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+
+  .dual-panel h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .dual-panel.green h4 { color: var(--green);  border-color: var(--green-dim); }
+  .dual-panel.cyan  h4 { color: var(--cyan);   border-color: var(--cyan-dim); }
+  .dual-panel.amber h4 { color: var(--amber);  border-color: var(--amber-dim); }
+  .dual-panel.rose  h4 { color: var(--rose);   border-color: var(--rose-dim); }
+
+  /* ── FRAMING SPECTRUM ── */
+  .framing-spectrum {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+
+  .framing-row {
+    display: grid;
+    grid-template-columns: 170px 1fr 110px;
+    align-items: center;
+    background: var(--bg2);
+    padding: 13px 20px;
+    gap: 16px;
+    transition: background 0.2s;
+  }
+
+  .framing-row:hover { background: var(--bg3); }
+
+  .framing-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--cyan);
+  }
+
+  .framing-bar-wrap {
+    height: 6px;
+    background: #0e1621;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .framing-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(to right, #00e5ff44, var(--cyan));
+  }
+
+  .framing-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── MULTI-CHAR PANEL ── */
+  .char-id-demo {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    margin: 24px 0;
+    overflow: hidden;
+  }
+
+  .char-id-header {
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    gap: 24px;
+  }
+
+  .char-segment {
+    padding: 16px 22px;
+    border-bottom: 1px solid #0e1621;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .char-segment:last-child { border-bottom: none; }
+
+  .char-segment .seg-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  /* ── PANEL COMIC ── */
+  .comic-structure {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 28px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media(max-width:580px){ .comic-structure { grid-template-columns: 1fr; } }
+
+  .panel-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    position: relative;
+  }
+
+  .panel-label {
+    position: absolute;
+    top: -1px; left: 14px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--bg3);
+    padding: 0 6px;
+    transform: translateY(-50%);
+  }
+
+  .panel-label.x { color: var(--cyan); }
+  .panel-label.y { color: var(--amber); }
+  .panel-label.z { color: var(--green); }
+
+  .panel-content {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-top: 10px;
+  }
+
+  .panel-content .ph { color: var(--cyan); }
+  .panel-content .pa { color: var(--amber); }
+  .panel-content .pg { color: var(--green); }
+
+  /* ── STYLE MIX TABLE ── */
+  .mix-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+
+  .mix-table thead tr { border-bottom: 1px solid var(--border); }
+
+  .mix-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  .mix-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #0e1621;
+    vertical-align: middle;
+    color: var(--text);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .mix-table tr:last-child td { border-bottom: none; }
+  .mix-table tr:hover td { background: #0c1018; }
+
+  .mix-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    margin: 2px 2px 2px 0;
+    white-space: nowrap;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .guide-progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    z-index: 100;
+  }
+
+  .guide-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--green), var(--cyan));
+    box-shadow: 0 0 10px var(--green);
+    transition: width 0.1s linear;
+  }
+
+  /* ── NAV DOTS ── */
+  .top-nav {
+    position: fixed;
+    top: 12px; right: 28px;
+    z-index: 99;
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .nav-dot.active {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  /* ── REVEAL ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── FOOTER ── */
+  .guide-footer {
+    margin-top: 100px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  /* ── SUB-HEADING ── */
+  .sub-heading {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 36px 0 14px;
+  }
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   SHARED GUIDE HEADER — added by the site build.
+   Everything below is new; the original stylesheet is untouched.
+   ═══════════════════════════════════════════════════════════ */
+:root { --ipg-h: 56px; --ipg-accent: #00e676; }
+
+body { padding-top: var(--ipg-h); }
+.hero { min-height: calc(100vh - var(--ipg-h)); }
+.guide-progress { top: var(--ipg-h); }
+.top-nav { top: calc(var(--ipg-h) + 16px); }
+section[id], .divider[id], .hero[id] { scroll-margin-top: calc(var(--ipg-h) + 24px); }
+
+.ipg-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ipg-h);
+  z-index: 200;
+  background: rgba(6, 8, 15, 0.82);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.ipg-header-inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ipg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #e8f2fb;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.ipg-brand:hover, .ipg-brand:focus-visible { color: var(--ipg-accent); }
+.ipg-brand-mark {
+  color: var(--ipg-accent);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-shadow: 0 0 12px var(--ipg-accent);
+}
+.ipg-parts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ipg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 999px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.ipg-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  color: #c8d6e5;
+  transition: color 0.22s;
+}
+.ipg-pill:hover, .ipg-pill:focus-visible {
+  color: #e8f2fb;
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(0, 229, 255, 0.06);
+  outline: none;
+}
+.ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+.ipg-pill.is-active {
+  color: var(--ipg-accent);
+  border-color: var(--ipg-accent);
+  background: color-mix(in srgb, var(--ipg-accent) 12%, transparent);
+  box-shadow: 0 0 18px -4px var(--ipg-accent);
+  cursor: default;
+}
+.ipg-pill.is-active .ipg-num { color: var(--ipg-accent); }
+
+@media (max-width: 760px) {
+  .ipg-header-inner { padding: 0 14px; gap: 10px; }
+  .ipg-brand-text { display: none; }
+  .ipg-pill { padding: 7px 11px; gap: 0; }
+  .ipg-label { display: none; }
+}
+@media (max-width: 420px) {
+  .ipg-brand { display: none; }
+  .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+
+<!-- Shared guide navigation (added by the site build) -->
+<header class="ipg-header">
+  <div class="ipg-header-inner">
+    <a class="ipg-brand" href="index.html" title="Guide index">
+      <span class="ipg-brand-mark" aria-hidden="true">&#9670;</span>
+      <span class="ipg-brand-text">Image Prompting Guide</span>
+    </a>
+    <nav class="ipg-parts" aria-label="Guide parts">
+      <a class="ipg-pill" href="prompting-guide-part1.html"><span class="ipg-num">1</span><span class="ipg-label">Foundations</span></a>
+      <a class="ipg-pill" href="prompting-guide-part2.html"><span class="ipg-num">2</span><span class="ipg-label">Settings</span></a>
+      <a class="ipg-pill is-active" href="prompting-guide-part3.html" aria-current="page"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
+      <a class="ipg-pill" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
+    </nav>
+  </div>
+</header>
+
+<div class="guide-progress"><div class="guide-progress-bar" id="progressBar"></div></div>
+<nav class="top-nav" id="navDots"></nav>
+
+<div class="page-wrap">
+
+  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+  <section class="hero" id="s0">
+    <div class="badge">Part III of IV &nbsp;·&nbsp; Advanced Techniques</div>
+    <h1 class="hero-title">Building <span class="accent">Characters</span><br/>and Pushing Craft</h1>
+    <p class="hero-subtitle">With foundational prompting and generation settings firmly in hand, this part introduces the techniques that separate competent results from genuinely crafted ones — from precise character construction to multi-figure storytelling and stylistic fusion.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">LEVEL<span>Intermediate</span></div>
+      <div class="hero-meta-item">SECTIONS<span>5 in Part III</span></div>
+      <div class="hero-meta-item">FOCUS<span>Character &amp; Advanced Structure</span></div>
+    </div>
+    <div class="scroll-hint">scroll to begin</div>
+  </section>
+
+  <!-- ═══════════════════════════ S1 — MIXING STYLES ═══════════════════════════ -->
+  <div class="divider reveal" id="s1">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 01 — Mixing Styles &amp; Mediums</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">01 / STYLE FUSION</span>
+    <h2 class="section-title">Mixing Styles &amp; Mediums</h2>
+    <div class="section-body">
+      <p>One of the most creatively rewarding capabilities of AI image generation is its ability to combine artistic styles and visual mediums that would be difficult or impossible to achieve through traditional means. A single prompt can instruct the model to render an image simultaneously in the manner of two distinct traditions — blending, for instance, the warm textures of watercolour with the high-contrast neon palette of cyberpunk illustration.</p>
+      <p>Style tags and medium tags are distinct in their function. A <strong>medium tag</strong> describes the physical or digital material through which the image appears to have been produced — ink, watercolour, graphite, 3D render. A <strong>style tag</strong> describes the aesthetic or genre of the work — cyberpunk, renaissance, impressionist, fantasy. Combining one medium with one style is the most legible approach, particularly for beginners, as both dimensions remain clearly interpretable by the model.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="card-label">Style + Medium Combinations</span>
+      <table class="mix-table">
+        <thead>
+          <tr>
+            <th>Medium Tag</th>
+            <th>Style Tag</th>
+            <th>Expected Character</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="mix-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">watercolor medium</span></td>
+            <td><span class="mix-tag" style="background:#1a0a0f;color:var(--rose);border:1px solid var(--rose-dim);">fantasy landscape</span></td>
+            <td>Soft, luminous environments with organic colour blending and visible brushwork</td>
+          </tr>
+          <tr>
+            <td><span class="mix-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">ink sketch medium</span></td>
+            <td><span class="mix-tag" style="background:#1f1200;color:var(--amber);border:1px solid var(--amber-dim);">cyberpunk style</span></td>
+            <td>High-contrast line art with neon colour fills; urban, gritty compositional energy</td>
+          </tr>
+          <tr>
+            <td><span class="mix-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">3D render medium</span></td>
+            <td><span class="mix-tag" style="background:#0d1f10;color:var(--green);border:1px solid var(--green-dim);">sci-fi style</span></td>
+            <td>Photorealistic surface materials with futuristic design language and metallic sheen</td>
+          </tr>
+          <tr>
+            <td><span class="mix-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">graphite sketch medium</span></td>
+            <td><span class="mix-tag" style="background:#1a0a0f;color:var(--rose);border:1px solid var(--rose-dim);">renaissance style</span></td>
+            <td>Classical compositional gravity rendered in monochrome pencil with dramatic shading</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-body">
+      <p>Era tags — such as <code>1980s style</code>, <code>Renaissance</code>, or <code>year 2014</code> — operate as a specialised subset of style tags. They instruct the model to adopt the visual conventions of a specific historical period, drawing on its training data to approximate the colour grading, compositional norms, and artistic idioms of that era. Results vary depending on how well the target period is represented in the model's training set, but for widely documented periods they can be remarkably effective.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Style Fusion Examples</span>
+<span class="comment">// Painterly science-fiction</span>
+<span class="hlG">futuristic city</span>, <span class="hl">watercolor medium</span>, <span class="hlR">sci-fi style</span>, <span class="hlA">neon lighting</span>, <span class="hlA">best quality</span>
+
+<span class="comment">// Retro illustration with ink texture</span>
+<span class="hlG">forest temple</span>, <span class="hl">ink sketch medium</span>, <span class="hlR">1970s style</span>, <span class="hlA">muted tones</span>, <span class="hlA">very aesthetic</span>
+
+<span class="comment">// Classical character in modern rendering</span>
+<span class="hl">1girl</span>, <span class="hlG">royal throne room</span>, <span class="hl">3D render medium</span>, <span class="hlR">renaissance style</span>, <span class="hlA">dramatic lighting</span>
+    </div>
+
+    <div class="highlight-box tip">
+      <span class="icon">💡</span>
+      <div>When fusing two styles that feel conceptually distant — such as a classical medium with a modern genre — use emphasis brackets to clarify which dimension should dominate. Writing <code>{{{watercolor medium}}}</code> alongside <code>cyberpunk style</code> makes clear that the medium, not the genre, should set the primary visual tone.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S2 — CHARACTER CREATION ═══════════════════════════ -->
+  <div class="divider reveal" id="s2">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 02 — Building a Consistent Character</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">02 / CHARACTER CREATION</span>
+    <h2 class="section-title">Constructing a Consistent Character</h2>
+    <div class="section-body">
+      <p>Creating a character who appears recognisably consistent across multiple generated images is one of the most challenging and rewarding skills in AI prompting. The model has no persistent memory of characters between sessions — every generation begins from scratch. The only mechanism for consistency is the prompt itself. A character whose visual properties are described with sufficient precision and tagged in the correct order will appear reliably similar across many generations, provided the seed and core tags are preserved.</p>
+      <p>Character construction is built from five distinct layers, each addressed by its own category of tags. Understanding each layer — and the specific tags available within it — gives you the vocabulary to describe a character with the depth and specificity required for cross-generation consistency.</p>
+    </div>
+
+    <div class="char-builder">
+      <div class="char-builder-header">
+        <span>Character Tag Reference</span>
+        <span class="step-badge">Interactive — hover tags</span>
+      </div>
+
+      <!-- Subject -->
+      <div class="char-row">
+        <div class="char-row-label">Subject</div>
+        <div class="char-row-tags">
+          <span class="tag">1girl</span>
+          <span class="tag">1boy</span>
+          <span class="tag">1other</span>
+          <span class="tag">solo</span>
+          <span class="tag">2girls</span>
+          <span class="tag">multiple girls</span>
+        </div>
+      </div>
+
+      <!-- Hair Length -->
+      <div class="char-row">
+        <div class="char-row-label">Hair Length</div>
+        <div class="char-row-tags">
+          <span class="tag">very short hair</span>
+          <span class="tag">short hair</span>
+          <span class="tag">medium hair</span>
+          <span class="tag">long hair</span>
+          <span class="tag">very long hair</span>
+          <span class="tag">absurdly long hair</span>
+        </div>
+      </div>
+
+      <!-- Hairstyle -->
+      <div class="char-row">
+        <div class="char-row-label">Hairstyle</div>
+        <div class="char-row-tags">
+          <span class="tag">bob cut</span>
+          <span class="tag">ponytail</span>
+          <span class="tag">twintails</span>
+          <span class="tag">braid</span>
+          <span class="tag">half updo</span>
+          <span class="tag">swept bangs</span>
+          <span class="tag">blunt bangs</span>
+          <span class="tag">hair over one eye</span>
+          <span class="tag">sidelocks</span>
+          <span class="tag">curly hair</span>
+          <span class="tag">wavy hair</span>
+          <span class="tag">messy hair</span>
+        </div>
+      </div>
+
+      <!-- Hair Colour -->
+      <div class="char-row">
+        <div class="char-row-label">Hair Colour</div>
+        <div class="char-row-tags">
+          <span class="tag">black hair</span>
+          <span class="tag">blonde hair</span>
+          <span class="tag">silver hair</span>
+          <span class="tag">white hair</span>
+          <span class="tag">brown hair</span>
+          <span class="tag">red hair</span>
+          <span class="tag">blue hair</span>
+          <span class="tag">purple hair</span>
+          <span class="tag">pink hair</span>
+          <span class="tag">green hair</span>
+          <span class="tag">gradient hair</span>
+          <span class="tag">two-tone hair</span>
+          <span class="tag">multicolored hair</span>
+        </div>
+      </div>
+
+      <!-- Eyes -->
+      <div class="char-row">
+        <div class="char-row-label">Eyes</div>
+        <div class="char-row-tags">
+          <span class="tag">blue eyes</span>
+          <span class="tag">green eyes</span>
+          <span class="tag">red eyes</span>
+          <span class="tag">aqua eyes</span>
+          <span class="tag">purple eyes</span>
+          <span class="tag">yellow eyes</span>
+          <span class="tag">heterochromia</span>
+          <span class="tag">slit pupils</span>
+          <span class="tag">star-shaped pupils</span>
+          <span class="tag">glowing eyes</span>
+        </div>
+      </div>
+
+      <!-- Skin -->
+      <div class="char-row">
+        <div class="char-row-label">Skin</div>
+        <div class="char-row-tags">
+          <span class="tag">pale skin</span>
+          <span class="tag">tan</span>
+          <span class="tag">dark skin</span>
+          <span class="tag">freckles</span>
+          <span class="tag">mole under eye</span>
+          <span class="tag">thick eyebrows</span>
+          <span class="tag">scar on face</span>
+          <span class="tag">colored skin</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="char-row">
+        <div class="char-row-label">Body Type</div>
+        <div class="char-row-tags">
+          <span class="tag">skinny</span>
+          <span class="tag">slim legs</span>
+          <span class="tag">curvy</span>
+          <span class="tag">toned</span>
+          <span class="tag">muscular</span>
+          <span class="tag">petite</span>
+          <span class="tag">tall</span>
+          <span class="tag">abs</span>
+          <span class="tag">wide hips</span>
+        </div>
+      </div>
+
+      <!-- Clothing -->
+      <div class="char-row">
+        <div class="char-row-label">Clothing</div>
+        <div class="char-row-tags">
+          <span class="tag">witch hat</span>
+          <span class="tag">white shirt</span>
+          <span class="tag">long sleeves</span>
+          <span class="tag">jacket</span>
+          <span class="tag">robe</span>
+          <span class="tag">corset</span>
+          <span class="tag">short skirt</span>
+          <span class="tag">black pantyhose</span>
+          <span class="tag">knee boots</span>
+          <span class="tag">leather belt</span>
+          <span class="tag">brown gloves</span>
+          <span class="tag">frilled skirt</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box info">
+      <span class="icon">🎯</span>
+      <div>Begin every character prompt with the <strong>subject tag</strong> (<code class="green">1girl</code>, <code class="green">1boy</code>) followed immediately by <code class="green">solo</code> if only one character is intended. This prevents the model from spontaneously adding background figures — a common occurrence when the subject position is left ambiguous.</div>
+    </div>
+
+    <h3 class="sub-heading">Step-by-Step: A Travelling Sorceress</h3>
+    <div class="section-body">
+      <p>The following sequence demonstrates how to build a consistent character incrementally, adding one tag layer at a time. This approach makes it straightforward to identify which addition changes the output and which leaves it unchanged — which is essential knowledge when refining a character across multiple sessions.</p>
+    </div>
+
+    <ul class="step-list">
+      <li><p><strong>Establish the subject and framing.</strong><br/>
+        <code class="green">1girl</code>, <code class="green">solo</code>, <code>full body</code></p></li>
+      <li><p><strong>Define hair — length, style, and colour.</strong><br/>
+        + <code>swept bangs</code>, <code>bob cut</code>, <code>medium hair</code>, <code>platinum blonde hair</code></p></li>
+      <li><p><strong>Add eyes and skin.</strong><br/>
+        + <code>aqua eyes</code>, <code>pale skin</code></p></li>
+      <li><p><strong>Introduce broad clothing tags.</strong><br/>
+        + <code>witch hat</code>, <code>blue robe</code>, <code>skinny</code>, <code>slim legs</code></p></li>
+      <li><p><strong>Refine clothing with specific items.</strong><br/>
+        + <code>corset</code>, <code>leather belt</code>, <code>leather pouch</code>, <code>brown gloves</code>, <code>knee boots</code></p></li>
+      <li><p><strong>Detail the lower outfit and add quality tags.</strong><br/>
+        + <code>short skirt</code>, <code>blue skirt</code>, <code>frilled skirt</code>, <code>black pantyhose</code>, <code>best quality</code></p></li>
+    </ul>
+
+    <div class="code-block">
+      <span class="line-label">Final Character Prompt</span>
+<span class="hlG">1girl</span>, <span class="hlG">solo</span>, <span class="hl">full body</span>, <span class="dim">swept bangs</span>, <span class="dim">bob cut</span>, <span class="dim">medium hair</span>,
+<span class="hlA">platinum blonde hair</span>, <span class="hlA">aqua eyes</span>, <span class="dim">pale skin</span>,
+<span class="hl">witch hat</span>, <span class="hl">blue headwear</span>, <span class="hl">blue cape</span>, <span class="hl">white shirt</span>,
+<span class="hl">long sleeves</span>, <span class="dim">corset</span>, <span class="dim">leather belt</span>, <span class="dim">leather pouch</span>,
+<span class="hlA">short skirt</span>, <span class="hlA">blue skirt</span>, <span class="hlA">frilled skirt</span>, <span class="dim">black pantyhose</span>,
+<span class="dim">brown gloves</span>, <span class="dim">knee boots</span>, <span class="dim">skinny</span>, <span class="dim">slim legs</span>, <span class="hlR">best quality</span>
+    </div>
+
+    <div class="callout">
+      "The balance between too many tags and too few is a genuine craft. An over-specified prompt can cause the model to generate visual noise rather than clarity — too many clothing items competing for space, for instance, often produces incoherent layering. Aim for sufficient specificity, not exhaustive completeness."
+    </div>
+
+    <div class="highlight-box warn">
+      <span class="icon">⚠️</span>
+      <div>Tags that describe front-facing features — such as eye colour, freckles, or abdominal detail — can override a camera angle instruction like <code>from behind</code>, pulling the character forward to display those features. If a back-facing pose is essential, keep front-facing feature tags minimal or remove them entirely.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S3 — FRAMING & CAMERA ═══════════════════════════ -->
+  <div class="divider reveal" id="s3">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 03 — Framing &amp; Camera Angles</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">03 / FRAMING &amp; CAMERA</span>
+    <h2 class="section-title">Framing Tags &amp; Camera Angles</h2>
+    <div class="section-body">
+      <p>Framing and camera angle tags govern the compositional relationship between the viewer and the subject — how close the camera appears, at what elevation it sits, and from which direction it looks. These tags do not modify the character's appearance; they modify the image's <em>perspective on</em> the character. Selecting the appropriate framing tag is, in effect, making a directorial decision about how your scene will be experienced.</p>
+    </div>
+
+    <h3 class="sub-heading">Framing — Distance from Subject</h3>
+
+    <div class="framing-spectrum">
+      <div class="framing-row">
+        <div class="framing-tag">close-up</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:100%"></div></div>
+        <div class="framing-note">Face only</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">portrait</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:82%"></div></div>
+        <div class="framing-note">Face → shoulders</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">upper body</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:64%"></div></div>
+        <div class="framing-note">Face → torso</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">cowboy shot</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:48%"></div></div>
+        <div class="framing-note">Face → thighs</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">full body</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:32%"></div></div>
+        <div class="framing-note">Whole figure</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">wide shot</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:18%"></div></div>
+        <div class="framing-note">Whole body, far</div>
+      </div>
+      <div class="framing-row">
+        <div class="framing-tag">very wide shot</div>
+        <div class="framing-bar-wrap"><div class="framing-bar" style="width:8%"></div></div>
+        <div class="framing-note">Panoramic distance</div>
+      </div>
+    </div>
+
+    <h3 class="sub-heading">Camera Angle Tags</h3>
+
+    <div class="dual">
+      <div class="dual-panel green">
+        <h4>Directional Angles</h4>
+        <div class="tag-grid">
+          <span class="tag">from above</span>
+          <span class="tag">from below</span>
+          <span class="tag">from behind</span>
+          <span class="tag">from side</span>
+          <span class="tag">profile</span>
+          <span class="tag">facing viewer</span>
+          <span class="tag">upside-down</span>
+          <span class="tag">sideways</span>
+        </div>
+      </div>
+      <div class="dual-panel cyan">
+        <h4>Special Perspectives</h4>
+        <div class="tag-grid">
+          <span class="tag">pov</span>
+          <span class="tag">dutch angle</span>
+          <span class="tag">fisheye</span>
+          <span class="tag">multiple views</span>
+          <span class="tag">reference sheet</span>
+          <span class="tag">zoom layer</span>
+        </div>
+        <p style="font-size:0.87rem;color:var(--text-dim);margin-top:14px;"><code>pov</code> renders the scene from a first-person viewpoint. <code>dutch angle</code> applies a characteristic tilted-camera slant. <code>reference sheet</code> is ideal for generating a character from multiple angles in one image.</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Framing in Practice</span>
+<span class="comment">// Intimate close-up — face and expression are the focus</span>
+<span class="hlG">1girl</span>, <span class="hlG">solo</span>, <span class="hl">close-up</span>, <span class="dim">silver hair</span>, <span class="dim">blue eyes</span>, <span class="hlA">serious expression</span>, <span class="hlR">best quality</span>
+
+<span class="comment">// Dynamic action — full figure with low camera angle</span>
+<span class="hlG">1girl</span>, <span class="hlG">solo</span>, <span class="hl">full body</span>, <span class="hl">from below</span>, <span class="dim">warrior outfit</span>, <span class="hlA">sword raised</span>, <span class="hlA">dramatic lighting</span>
+
+<span class="comment">// Mysterious — character seen from behind, wide environment</span>
+<span class="hlG">1girl</span>, <span class="hlG">solo</span>, <span class="hl">wide shot</span>, <span class="hl">from behind</span>, <span class="hlG">ancient ruins</span>, <span class="hlA">moonlight</span>, <span class="hlA">very aesthetic</span>
+    </div>
+
+    <div class="callout amber">
+      "The canvas aspect ratio and the framing tag should work together, not against each other. A <code>full body</code> tag on a square canvas often produces an awkwardly cropped figure. Pair full-body framing with a vertical 2:3 canvas, and landscape or wide-shot framing with a horizontal 16:9 canvas, for naturally proportioned compositions."
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S4 — MULTI-CHARACTER ═══════════════════════════ -->
+  <div class="divider reveal" id="s4">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 04 — Multi-Character Prompts</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">04 / MULTIPLE CHARACTERS</span>
+    <h2 class="section-title">Structuring Multi-Character Prompts</h2>
+    <div class="section-body">
+      <p>When a scene involves more than one character, the prompt structure must be deliberately engineered to prevent the model from applying one character's attributes to another. Without a clear structural framework, the AI tends to blend traits unpredictably — giving the wrong hair colour to the wrong figure, or merging their clothing into a confused hybrid. The solution is <strong>identifier-based prompting</strong>: assigning a unique letter or label to each character and consistently using that label as the prefix for all attributes belonging to that figure.</p>
+    </div>
+
+    <div class="char-id-demo">
+      <div class="char-id-header">
+        <span>Identifier Structure</span>
+        <span>Colour-coded by character</span>
+      </div>
+      <div class="char-segment">
+        <div class="seg-label">Count + Identifier Declaration</div>
+        <span style="color:#a8c0d8;font-family:'IBM Plex Mono',monospace;font-size:13px;">
+          <span class="ph">2girls</span><span style="color:var(--text-dim);">_A_and_B</span>
+        </span>
+      </div>
+      <div class="char-segment">
+        <div class="seg-label">Character A — Attributes</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;">
+          <span style="color:var(--text-dim);">{</span><span class="ph">A girl have (white hair) (blue eyes) (white frill dress) (white bow)</span><span style="color:var(--text-dim);">}</span>
+        </span>
+      </div>
+      <div class="char-segment">
+        <div class="seg-label">Character B — Attributes</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;">
+          <span style="color:var(--text-dim);">{</span><span class="pa">B girl have (black hair) (red eyes) (black frill dress) (black bow)</span><span style="color:var(--text-dim);">}</span>
+        </span>
+      </div>
+      <div class="char-segment">
+        <div class="seg-label">Shared Scene + Quality</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);">
+          <span class="pg">cinematic lighting</span>, lively smile, sitting on couch, <span class="pg">best quality</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>Each character's attributes are enclosed in curly braces and prefixed with their identifier. Scene elements — setting, lighting, shared actions, and quality tags — are placed outside the identifier blocks, where they apply globally to the image rather than to a specific figure. This separation is the key structural principle of multi-character prompting.</p>
+      <p>As the number of characters increases, the prompt necessarily grows more complex, and the model's ability to honour each character's individual attributes decreases proportionally. Two and three-character scenes are reliably achievable. Beyond five characters, attribute blending becomes increasingly unpredictable, and the canvas resolution must be widened substantially to give the model enough compositional space to distinguish between figures.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Interaction Prompts — Couples</span>
+<span class="comment">// Hugging</span>
+<span class="hlG">1girl</span>, <span class="hlG">1boy</span>, <span class="dim">guy: grey eyes, short hair</span>, <span class="dim">girl: black hair, red eyes</span>,
+<span class="hl">couple</span>, <span class="hl">hugging</span>, <span class="hlA">natural lighting</span>, <span class="hlA">outdoors</span>, <span class="hlR">masterpiece</span>
+
+<span class="comment">// Princess carry</span>
+<span class="hlG">1girl</span>, <span class="hlG">1boy</span>, <span class="dim">guy: grey eyes, short hair</span>, <span class="dim">girl: very long hair, red eyes</span>,
+<span class="hl">couple</span>, <span class="hl">princess carry</span>, <span class="hlA">white background</span>, <span class="hlR">masterpiece</span>
+
+<span class="comment">// Holding hands, wide landscape</span>
+<span class="hlG">1girl</span>, <span class="hlG">1boy</span>, <span class="dim">couple</span>, <span class="hl">holding hand</span>, <span class="hlA">natural lighting</span>, <span class="hlA">outdoors</span>,
+<span class="hl">long shot</span>, <span class="hlA">landscape</span>, <span class="dim">lively smile</span>, <span class="hlR">masterpiece</span>
+    </div>
+
+    <div class="card amber">
+      <span class="card-label">Composition Styles for Groups</span>
+      <div class="card-title">Tailoring the Visual Format to the Scene</div>
+      <div class="section-body" style="font-size:0.95rem;">
+        <p>Beyond individual character attributes, the overall compositional style of a group image can be directed with a few powerful tags. <code class="amber">movie poster</code> introduces a dramatic, cinematic arrangement with subjects positioned for visual impact. <code class="amber">view from above</code> creates an intimate bird's-eye perspective, suggesting closeness and warmth. <code class="amber">view from below</code> conveys scale and authority — the figures appear imposing from the viewer's lower vantage point. <code class="amber">view from back</code> frames the group as observers themselves, inviting the viewer into the scene rather than presenting the characters to them.</p>
+      </div>
+    </div>
+
+    <div class="dual" style="margin-top:8px;">
+      <div class="dual-panel rose">
+        <h4>Increasing Character Count</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">Replace the numeric subject tag accordingly: <code class="rose">3girls</code>, <code class="rose">5girls</code>, <code class="rose">10 girls</code>. Extend the identifier list to match the count — A through J for ten characters. Widen the canvas to a horizontal resolution as the count grows, to give each figure sufficient compositional room.</p>
+      </div>
+      <div class="dual-panel amber">
+        <h4>Undesired Content for Groups</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">When generating large groups, the Undesired Content field becomes especially important. Adding <code class="amber">extra limbs</code>, <code class="amber">bad anatomy</code>, <code class="amber">missing fingers</code>, and <code class="amber">blurry</code> as negative prompts helps the model maintain anatomical coherence when managing multiple figures simultaneously.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S5 — COMIC PANELS ═══════════════════════════ -->
+  <div class="divider reveal" id="s5">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 05 — Comic Panel Prompting</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">05 / COMIC PANELS</span>
+    <h2 class="section-title">Sequential Storytelling with Panel Prompts</h2>
+    <div class="section-body">
+      <p>One of the more sophisticated applications of structured prompting is directing the AI to generate images that follow a <strong>comic panel layout</strong> — sequential frames arranged within a single image, each depicting a distinct moment in a narrative. This technique extends the identifier-based approach used in multi-character prompting, applying it now to panels rather than figures: each panel receives its own label, and the scene within that panel is described inside its own structural block.</p>
+      <p>The foundational principle is straightforward: declare the total number of panels and assign each an identifier at the beginning of the prompt, then describe the content of each panel individually. Shared attributes — such as recurring characters and their visual properties — are defined once and referenced consistently across panels. This consistency of reference is what gives the AI enough information to maintain character continuity from one frame to the next.</p>
+    </div>
+
+    <div class="card">
+      <span class="card-label">Panel Prompt Anatomy</span>
+      <div class="card-title">Three Structural Components</div>
+      <ul class="step-list" style="margin-top:14px;">
+        <li>
+          <p><strong>Panel count and identifier declaration.</strong> Open the prompt by specifying the format and naming each panel. Format: <code>NPanel-Comic_X_and_Y</code> where N is the number of panels and X, Y are the panel labels.</p>
+        </li>
+        <li>
+          <p><strong>Character role assignments.</strong> Define each recurring character and their narrative role once, so the model can apply those definitions consistently across all panels. Format: <code>{"{A-Boy is Samurai}"}</code></p>
+        </li>
+        <li>
+          <p><strong>Individual panel descriptions.</strong> Describe the content, action, and setting of each panel inside its own braced block. Format: <code>{"{X-Panel: scene description}"}</code>. Use double braces <code>{{"{{"}}</code> to emphasise dramatic elements.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="comic-structure">
+      <div class="panel-box" style="grid-column:1/-1;">
+        <div class="panel-label" style="color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;">HEADER — Count + Identifiers</div>
+        <div class="panel-content" style="margin-top:14px;">
+          <span class="pg">3Panel-Comic_X_and_Y_and_Z</span>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label x">PANEL X</div>
+        <div class="panel-content">
+          {<span class="ph">X-Panel</span>: 1girl,<br/>
+          <span class="ph">{{Girl wears explorer's gear,<br/>standing by cliff edge,<br/>looking out}}</span>}
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label y">PANEL Y</div>
+        <div class="panel-content">
+          {<span class="pa">Y-Panel</span>: 1girl_and_1boy,<br/>
+          {<span class="pa">Girl and Boy hiking,<br/>mountain in distance</span>}}
+        </div>
+      </div>
+      <div class="panel-box" style="grid-column:1/-1;">
+        <div class="panel-label z">PANEL Z</div>
+        <div class="panel-content">
+          {<span class="pg">Z-Panel</span>: 1girl_and_1boy,<br/>
+          {<span class="pg">Girl and Boy setting up tent,<br/>night scene, moonlight</span>}}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>For action sequences, the progression of verbs across panels carries the narrative momentum. Using distinct, active language within each panel description — such as <code>{A-Boy charging forward}</code> transitioning to <code>{A-Boy swinging sword}</code> — gives the model enough directional information to generate a visually coherent sequence rather than three unrelated images placed in a grid.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Two-Panel Action Sequence</span>
+<span class="hlG">2Panel-Comic_A_and_B</span>,
+
+<span class="comment">// Panel A — Preparation</span>
+{<span class="hl">A-Panel</span>: <span class="hl">1boy_A</span>, {{<span class="hlA">A-Boy is Samurai</span>, holding sword, stance-ready}},
+{background: <span class="hlG">training dojo</span>}},
+
+<span class="comment">// Panel B — Execution</span>
+{<span class="hl">B-Panel</span>: <span class="hl">1boy_A</span>, {<span class="hlA">A-Boy sweating</span>, concentration face,
+<span class="hlG">practicing with straw dummy</span>}}
+    </div>
+
+    <div class="highlight-box info">
+      <span class="icon">🎬</span>
+      <div>Maintain character identifiers consistently across all panels. If a character is introduced as <code class="green">A-Boy</code> in the first panel, every subsequent reference to that same figure should use <code class="green">A-Boy</code> — not "the boy" or "him." Inconsistent naming is the most common cause of character continuity breakdown in multi-panel prompts.</div>
+    </div>
+
+    <div class="card rose" style="margin-top:36px;">
+      <span class="card-label">Part III — Summary</span>
+      <div class="card-title">From Single Characters to Sequential Narratives</div>
+      <div class="section-body" style="font-size:0.95rem;">
+        <p><strong>Style fusion</strong> enables creative combinations of artistic mediums and genre aesthetics — use medium tags and style tags together, with emphasis brackets to clarify which should dominate. <strong>Character creation</strong> requires a layered tag vocabulary covering subject, hair, eyes, skin, body type, and clothing — applied in the correct order for consistent results across generations. <strong>Framing and camera angle</strong> tags make directorial decisions explicit; pair them deliberately with canvas dimensions for maximum compositional control. <strong>Multi-character prompts</strong> use identifier-based structuring to prevent attribute blending between figures, with shared scene tags placed outside the identifier blocks. <strong>Comic panel prompts</strong> extend this structure into sequential narratives, with consistent character naming and progressive action verbs providing continuity across frames.</p>
+        <p style="margin-top:14px;">Each of these techniques is, at its core, a more disciplined application of the foundational principles from Parts I and II: precise tag selection, logical ordering, and deliberate emphasis. The tools are the same; the compositions are simply more ambitious.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+  <footer class="guide-footer reveal">
+    <div>
+      <div style="font-family:'Orbitron',monospace;color:var(--text-dim);font-size:10px;letter-spacing:0.2em;">PART III OF IV</div>
+      <div style="margin-top:6px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">Advanced Techniques &amp; Character Creation · Complete</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:6px;">COMING NEXT</div>
+      <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--green);letter-spacing:0.05em;">Part IV → Real-World Prompts &amp; Genre Mastery</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = Math.min(pct, 100) + '%';
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  reveals.forEach(r => obs.observe(r));
+
+  // Nav dots
+  const sections = ['s0','s1','s2','s3','s4','s5'];
+  const labels   = ['Intro','Style Fusion','Character Creation','Framing & Camera','Multi-Character','Comic Panels'];
+  const navEl    = document.getElementById('navDots');
+
+  sections.forEach((id, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.title = labels[i];
+    dot.onclick = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    navEl.appendChild(dot);
+  });
+
+  const sectionEls = sections.map(id => document.getElementById(id));
+  const dotEls     = navEl.querySelectorAll('.nav-dot');
+
+  const dotObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const i = sectionEls.indexOf(e.target);
+      if (i >= 0 && e.isIntersecting) {
+        dotEls.forEach(d => d.classList.remove('active'));
+        dotEls[i]?.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -40% 0px' });
+
+  sectionEls.forEach(el => el && dotObs.observe(el));
+</script>
+</body>
+</html>
