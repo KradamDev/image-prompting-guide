@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Image Prompting — Part IV: Real-World Prompts & Genre Mastery</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #06080f;
+    --bg2:       #0c1018;
+    --bg3:       #111722;
+    --cyan:      #00e5ff;
+    --cyan-dim:  #00e5ff44;
+    --amber:     #ffb300;
+    --amber-dim: #ffb30033;
+    --rose:      #ff4d6d;
+    --rose-dim:  #ff4d6d44;
+    --violet:    #c084fc;
+    --violet-dim:#c084fc44;
+    --text:      #c8d6e5;
+    --text-dim:  #6b7f96;
+    --border:    #1e2d40;
+    --glow-v:    0 0 20px #c084fc55, 0 0 60px #c084fc22;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 10%;
+    right: -20%;
+    width: 70vw;
+    height: 70vw;
+    background: radial-gradient(circle, #c084fc07 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 0 40px;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--violet);
+    border: 1px solid var(--violet-dim);
+    background: #c084fc09;
+    border-radius: 4px;
+    padding: 6px 14px;
+    margin-bottom: 32px;
+    width: fit-content;
+    animation: fadein 0.8s ease both;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--violet);
+    box-shadow: 0 0 8px var(--violet);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.1rem, 5.5vw, 3.9rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: #fff;
+    animation: fadein 0.8s 0.1s ease both;
+  }
+
+  .hero-title .accent { color: var(--violet); text-shadow: var(--glow-v); }
+
+  .hero-subtitle {
+    margin-top: 22px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    max-width: 600px;
+    animation: fadein 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    animation: fadein 0.8s 0.3s ease both;
+  }
+
+  .hero-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .hero-meta-item span {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px; left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    animation: fadein 1s 0.8s ease both;
+  }
+
+  .scroll-hint::before {
+    content: '';
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--violet));
+    animation: slidedown 1.6s ease infinite;
+  }
+
+  @keyframes slidedown {
+    0%  { transform:scaleY(0); transform-origin:top; }
+    50% { transform:scaleY(1); transform-origin:top; }
+    51% { transform:scaleY(1); transform-origin:bottom; }
+    100%{ transform:scaleY(0); transform-origin:bottom; }
+  }
+
+  @keyframes fadein {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 64px 0 48px;
+  }
+
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  .divider-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--violet);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .section-body { color: var(--text); font-size: 1rem; }
+  .section-body p + p { margin-top: 16px; }
+
+  strong { color: #fff; font-weight: 600; }
+
+  .sub-heading {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 36px 0 14px;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--violet);
+    background: #c084fc0d;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  code.cyan  { color: var(--cyan);  background: #00e5ff0d; }
+  code.amber { color: var(--amber); background: #ffb3000d; }
+  code.rose  { color: var(--rose);  background: #ff4d6d0d; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: #2a3f58; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--violet), transparent);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .card.cyan::before   { background: linear-gradient(to bottom, var(--cyan), transparent); }
+  .card.amber::before  { background: linear-gradient(to bottom, var(--amber), transparent); }
+  .card.rose::before   { background: linear-gradient(to bottom, var(--rose), transparent); }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--violet);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .card.cyan  .card-label { color: var(--cyan);  }
+  .card.amber .card-label { color: var(--amber); }
+  .card.rose  .card-label { color: var(--rose);  }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  /* ── CODE BLOCK (prompt display) ── */
+  .code-block {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: #a8c0d8;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .line-label {
+    position: absolute;
+    top: 12px; right: 16px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .code-block .hl   { color: var(--cyan); }
+  .code-block .hlA  { color: var(--amber); }
+  .code-block .hlR  { color: var(--rose); }
+  .code-block .hlV  { color: var(--violet); }
+  .code-block .hlG  { color: #00e676; }
+  .code-block .dim  { color: var(--text-dim); }
+  .code-block .comment { color: #3d5470; font-style: italic; }
+
+  /* ── ANNOTATED PROMPT ── */
+  .prompt-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+
+  .prompt-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .prompt-card-genre {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #fff;
+  }
+
+  .prompt-card-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+  }
+
+  .prompt-card-body {
+    padding: 20px 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.85;
+    color: #a8c0d8;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prompt-card-annotations {
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .annotation {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 12px;
+    align-items: start;
+    font-size: 13.5px;
+  }
+
+  .annotation-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  .annotation-text { color: var(--text-dim); line-height: 1.55; }
+  .annotation-text strong { color: var(--text); }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .highlight-box .icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .highlight-box.tip  { border: 1px solid var(--violet-dim); background: #c084fc07; }
+  .highlight-box.warn { border: 1px solid #ffb30044; background: #ffb30007; }
+  .highlight-box.info { border: 1px solid #00e5ff44; background: #00e5ff07; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--violet);
+    padding: 6px 0 6px 20px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  .callout.amber { border-color: var(--amber); }
+  .callout.cyan  { border-color: var(--cyan); }
+  .callout.rose  { border-color: var(--rose); }
+
+  /* ── DUAL PANEL ── */
+  .dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  @media(max-width:600px){ .dual { grid-template-columns: 1fr; } }
+
+  .dual-panel {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+
+  .dual-panel h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .dual-panel.violet h4 { color: var(--violet); border-color: var(--violet-dim); }
+  .dual-panel.cyan   h4 { color: var(--cyan);   border-color: var(--cyan-dim); }
+  .dual-panel.amber  h4 { color: var(--amber);  border-color: var(--amber-dim); }
+  .dual-panel.rose   h4 { color: var(--rose);   border-color: var(--rose-dim); }
+
+  /* ── FORMULA BUILDER ── */
+  .formula {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 22px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .formula-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .formula-tag {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+
+  .formula-desc {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .formula-plus {
+    font-size: 18px;
+    color: var(--border);
+    margin: 0 2px;
+    padding-top: 0px;
+    align-self: center;
+    margin-bottom: 18px;
+  }
+
+  /* ── GENRE GRID ── */
+  .genre-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 28px 0;
+  }
+
+  @media(max-width:580px){ .genre-grid { grid-template-columns: 1fr 1fr; } }
+
+  .genre-tile {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+    transition: border-color 0.25s, background 0.25s;
+    cursor: default;
+  }
+
+  .genre-tile:hover { border-color: #2e4460; background: #0f1820; }
+
+  .genre-tile .gt-icon { font-size: 26px; display: block; margin-bottom: 10px; }
+
+  .genre-tile .gt-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  .genre-tile .gt-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+
+  /* ── STEP LIST ── */
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--violet);
+    background: var(--violet-dim);
+    border: 1px solid #c084fc33;
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-list li p { color: var(--text); font-size: 0.97rem; }
+
+  /* ── PROGRESS BAR ── */
+  .guide-progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    z-index: 100;
+  }
+
+  .guide-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--violet), var(--rose));
+    box-shadow: 0 0 10px var(--violet);
+    transition: width 0.1s linear;
+  }
+
+  /* ── NAV DOTS ── */
+  .top-nav {
+    position: fixed;
+    top: 12px; right: 28px;
+    z-index: 99;
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .nav-dot.active {
+    background: var(--violet);
+    box-shadow: 0 0 8px var(--violet);
+  }
+
+  /* ── REVEAL ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── FOOTER ── */
+  .guide-footer {
+    margin-top: 100px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  /* ── COMPLETION BANNER ── */
+  .complete-banner {
+    background: linear-gradient(135deg, #0d0a1a 0%, #0c1018 50%, #060d0a 100%);
+    border: 1px solid var(--violet-dim);
+    border-radius: 16px;
+    padding: 40px 36px;
+    margin: 48px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .complete-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, #c084fc0e 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .complete-banner .cb-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--violet);
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .complete-banner h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .complete-banner p {
+    font-size: 1rem;
+    color: var(--text-dim);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .part-pills {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+
+  .part-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   SHARED GUIDE HEADER — added by the site build.
+   Everything below is new; the original stylesheet is untouched.
+   ═══════════════════════════════════════════════════════════ */
+:root { --ipg-h: 56px; --ipg-accent: #c084fc; }
+
+body { padding-top: var(--ipg-h); }
+.hero { min-height: calc(100vh - var(--ipg-h)); }
+.guide-progress { top: var(--ipg-h); }
+.top-nav { top: calc(var(--ipg-h) + 16px); }
+section[id], .divider[id], .hero[id] { scroll-margin-top: calc(var(--ipg-h) + 24px); }
+
+.ipg-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ipg-h);
+  z-index: 200;
+  background: rgba(6, 8, 15, 0.82);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.ipg-header-inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ipg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #e8f2fb;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.ipg-brand:hover, .ipg-brand:focus-visible { color: var(--ipg-accent); }
+.ipg-brand-mark {
+  color: var(--ipg-accent);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-shadow: 0 0 12px var(--ipg-accent);
+}
+.ipg-parts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ipg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 999px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.ipg-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  color: #c8d6e5;
+  transition: color 0.22s;
+}
+.ipg-pill:hover, .ipg-pill:focus-visible {
+  color: #e8f2fb;
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(0, 229, 255, 0.06);
+  outline: none;
+}
+.ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+.ipg-pill.is-active {
+  color: var(--ipg-accent);
+  border-color: var(--ipg-accent);
+  background: color-mix(in srgb, var(--ipg-accent) 12%, transparent);
+  box-shadow: 0 0 18px -4px var(--ipg-accent);
+  cursor: default;
+}
+.ipg-pill.is-active .ipg-num { color: var(--ipg-accent); }
+
+@media (max-width: 760px) {
+  .ipg-header-inner { padding: 0 14px; gap: 10px; }
+  .ipg-brand-text { display: none; }
+  .ipg-pill { padding: 7px 11px; gap: 0; }
+  .ipg-label { display: none; }
+}
+@media (max-width: 420px) {
+  .ipg-brand { display: none; }
+  .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+
+<!-- Shared guide navigation (added by the site build) -->
+<header class="ipg-header">
+  <div class="ipg-header-inner">
+    <a class="ipg-brand" href="index.html" title="Guide index">
+      <span class="ipg-brand-mark" aria-hidden="true">&#9670;</span>
+      <span class="ipg-brand-text">Image Prompting Guide</span>
+    </a>
+    <nav class="ipg-parts" aria-label="Guide parts">
+      <a class="ipg-pill" href="prompting-guide-part1.html"><span class="ipg-num">1</span><span class="ipg-label">Foundations</span></a>
+      <a class="ipg-pill" href="prompting-guide-part2.html"><span class="ipg-num">2</span><span class="ipg-label">Settings</span></a>
+      <a class="ipg-pill" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
+      <a class="ipg-pill is-active" href="prompting-guide-part4.html" aria-current="page"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
+    </nav>
+  </div>
+</header>
+
+<div class="guide-progress"><div class="guide-progress-bar" id="progressBar"></div></div>
+<nav class="top-nav" id="navDots"></nav>
+
+<div class="page-wrap">
+
+  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+  <section class="hero" id="s0">
+    <div class="badge">Part IV of IV &nbsp;·&nbsp; Genre Mastery</div>
+    <h1 class="hero-title">Prompts in the<br/><span class="accent">Real World</span></h1>
+    <p class="hero-subtitle">This final part translates everything covered in Parts I through III into concrete, genre-specific applications. Each section examines a distinct category of image-making — from photorealistic portraiture to architectural rendering to science fiction — with fully annotated prompt examples drawn directly from established prompting practice.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">LEVEL<span>All Levels</span></div>
+      <div class="hero-meta-item">SECTIONS<span>5 in Part IV</span></div>
+      <div class="hero-meta-item">FOCUS<span>Applied Genre Prompting</span></div>
+    </div>
+    <div class="scroll-hint">scroll to begin</div>
+  </section>
+
+  <!-- ═══════════════════════════ S1 — PHOTOGRAPHY STYLE ═══════════════════════════ -->
+  <div class="divider reveal" id="s1">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 01 — Photography-Style Prompts</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">01 / PHOTOGRAPHY-STYLE PROMPTS</span>
+    <h2 class="section-title">Portraits, Food &amp; Animals</h2>
+    <div class="section-body">
+      <p>Photography-style prompts represent one of the most practically useful categories in AI image generation, and also one of the most technically specific. The goal is to produce an image that does not merely depict a subject but convincingly appears to have been captured through a real camera lens. Achieving this requires a vocabulary drawn from professional photography: camera models, aperture and shutter speed values, ISO ratings, lens focal lengths, and lighting setups. These parameters do not instruct the AI on optics — the AI has no camera — but they communicate the <em>aesthetic signature</em> of the settings they describe, drawing on patterns the model has learned from millions of tagged photographs.</p>
+      <p>The fundamental formula for any photography-style prompt is: <strong>subject</strong> + <strong>camera model</strong> + <strong>technical settings</strong> + <strong>lighting descriptor</strong> + <strong>quality tags</strong>. Each genre within photography then applies its own characteristic variants to this formula.</p>
+    </div>
+
+    <!-- Portrait -->
+    <div class="prompt-card">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Portrait Photography</div>
+        <div class="prompt-card-tag" style="background:#c084fc14;color:var(--violet);border:1px solid var(--violet-dim);">Photorealistic</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--cyan);">well-lit</span>, <span style="color:var(--cyan);">sharp-focus</span>, <span style="color:var(--amber);">high-quality</span>, <span style="color:var(--amber);">artistic</span>, <span style="color:#a8c0d8;">unique</span>,
+        <span style="color:var(--violet);">award-winning photograph</span>, <span style="color:var(--cyan);">Canon EOS 5D Mark IV DSLR</span>,
+        <span style="color:var(--cyan);">f/8</span>, <span style="color:var(--cyan);">ISO 100</span>, <span style="color:var(--cyan);">1/250 second</span>,
+        <span style="color:var(--amber);">close-up</span>, <span style="color:var(--amber);">natural light</span>, <span style="color:#a8c0d8;">professional</span>,
+        <span style="color:var(--amber);">flattering</span>, <span style="color:var(--amber);">headshot</span>, <span style="color:var(--violet);">glibatree style</span><br/>
+        <span style="color:#3d5470;font-style:italic;">Negative: grainy, deformed</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Camera and technical settings</strong> — specifying a recognisable camera body and realistic exposure values (f/8, ISO 100, 1/250s) communicates the sharp, controlled aesthetic of professional studio portraiture.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Lighting and framing</strong> — <code class="amber">natural light</code> combined with <code class="amber">close-up</code> and <code class="amber">headshot</code> directs both the illumination quality and the compositional distance from the subject simultaneously.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Style attribution</strong> — phrases like <code>award-winning photograph</code> and named style references signal the calibre and aesthetic lineage the AI should emulate.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Food -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Food Photography</div>
+        <div class="prompt-card-tag" style="background:#ffb30014;color:var(--amber);border:1px solid var(--amber-dim);">Commercial</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--cyan);">5 Delicious Food Photography</span>:<span style="color:var(--amber);">4</span>
+        <span style="color:#a8c0d8;">well-lit</span>, <span style="color:var(--cyan);">sharp-focus</span>, <span style="color:var(--amber);">high-quality</span>, <span style="color:#a8c0d8;">artistic</span>, <span style="color:#a8c0d8;">unique</span>,
+        <span style="color:var(--violet);">award-winning photograph</span>, <span style="color:var(--cyan);">Canon EOS 5D Mark IV DSLR</span>,
+        <span style="color:var(--cyan);">f/8 aperture</span>, <span style="color:var(--cyan);">1/125 second shutter speed</span>, <span style="color:var(--cyan);">ISO 100</span>,
+        <span style="color:var(--amber);">professional lighting setup</span>, <span style="color:#a8c0d8;">Adobe Photoshop</span>,
+        <span style="color:var(--amber);">appetizing composition</span>, <span style="color:var(--amber);">attention to detail</span><br/>
+        <span style="color:#3d5470;font-style:italic;">Negative: blurry, boring, generic, unappetizing, simple:-2, grainy, smokey</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Batch specification</strong> — the <code class="cyan">5 ... :4</code> syntax requests five variations at quality level 4, producing a set of images suitable for selecting the strongest composition rather than committing to a single generation.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Domain-specific descriptors</strong> — <code class="amber">appetizing composition</code> and <code class="amber">professional lighting setup</code> activate the model's understanding of food styling conventions: hero angles, controlled highlights, and colour saturation that makes food look edible and appealing.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--rose);"></div>
+          <div class="annotation-text"><strong>Negative prompt weighting</strong> — <code class="rose">simple:-2</code> applies a weighted negative, pushing especially hard against flat or under-composed results. This is the same emphasis mechanism from Part I, applied within the undesired content field.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animals -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Animal Photography</div>
+        <div class="prompt-card-tag" style="background:#00e5ff14;color:var(--cyan);border:1px solid var(--cyan-dim);">Pet &amp; Wildlife</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--violet);">adorable pet photography</span>, <span style="color:#a8c0d8;">cute</span>, <span style="color:var(--cyan);">well-lit</span>,
+        <span style="color:var(--cyan);">sharp-focus</span>, <span style="color:var(--amber);">high-quality</span>, <span style="color:#a8c0d8;">artistic</span>, <span style="color:#a8c0d8;">unique</span>,
+        <span style="color:var(--violet);">award-winning photograph</span>, <span style="color:var(--cyan);">Canon EOS 5D Mark IV DSLR</span>,
+        <span style="color:var(--cyan);">f/8</span>, <span style="color:var(--cyan);">ISO 100</span>, <span style="color:var(--cyan);">1/250 second</span>,
+        <span style="color:var(--amber);">close-up</span>, <span style="color:var(--amber);">natural light</span>, <span style="color:#a8c0d8;">domestic animals</span>,
+        <span style="color:var(--amber);">playful</span>, <span style="color:var(--amber);">fluffy</span>, <span style="color:var(--violet);">glibatree style</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Subject framing</strong> — opening with <code>adorable pet photography</code> rather than simply "a dog" immediately positions the image within a specific commercial genre, activating the model's understanding of the shallow depth-of-field, warm colour grading, and intimate framing that characterise professional pet portraiture.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Personality tags</strong> — <code class="amber">playful</code> and <code class="amber">fluffy</code> contribute to the emotional register of the image rather than its technical properties, guiding the model toward a warmer, more expressive compositional choice.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box tip">
+      <span class="icon">💡</span>
+      <div>When prompting for photography-style images, the camera model tag does not need to be technically accurate to your desired output. Its primary function is to signal a quality tier and aesthetic convention to the model. <code>Canon EOS 5D Mark IV</code> and <code>Sony Alpha a7R IV</code> consistently produce high-fidelity results because they appear frequently in high-quality training data — not because the AI understands their sensor specifications.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S2 — ARCHITECTURE & ENVIRONMENTS ═══════════════════════════ -->
+  <div class="divider reveal" id="s2">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 02 — Architecture &amp; Environments</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">02 / ARCHITECTURE &amp; ENVIRONMENTS</span>
+    <h2 class="section-title">Spaces, Structures &amp; Scenes</h2>
+    <div class="section-body">
+      <p>Architectural and environmental prompts operate on a different axis from character or photography prompts. Rather than describing a subject within a scene, they <em>are</em> the scene — the built or natural environment is the entire image. The challenge here is conveying not just what the space looks like, but its physical properties: material behaviour under light, structural logic, spatial scale, and the relationship between constructed and natural elements.</p>
+      <p>Professional architectural rendering has a well-established visual vocabulary — one the model has absorbed from years of exposure to architectural photography, 3D studio renders, and design publications. Drawing on that vocabulary deliberately produces far more convincing results than describing a building in lay terms.</p>
+    </div>
+
+    <!-- Architecture -->
+    <div class="prompt-card">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Professional Architecture Render</div>
+        <div class="prompt-card-tag" style="background:#c084fc14;color:var(--violet);border:1px solid var(--violet-dim);">3D Render</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--cyan);">5 Professional Architecture Render</span>:<span style="color:var(--amber);">4</span>
+        <span style="color:#a8c0d8;">photorealistic</span>, <span style="color:var(--cyan);">3D rendering</span>, <span style="color:var(--amber);">high-quality</span>,
+        <span style="color:#a8c0d8;">detailed</span>, <span style="color:#a8c0d8;">accurate representation</span>,
+        <span style="color:var(--violet);">3D Studio Max</span>, <span style="color:var(--violet);">V-Ray</span>, <span style="color:#a8c0d8;">professional</span>,
+        <span style="color:#a8c0d8;">corporate</span>, <span style="color:var(--violet);">award-winning</span>, <span style="color:var(--violet);">glibatree style</span>,
+        <span style="color:var(--amber);">realistic materials</span>, <span style="color:var(--amber);">accurate dimensions</span>,
+        <span style="color:var(--cyan);">multiple angles</span>, <span style="color:var(--cyan);">perspective views</span>:<span style="color:var(--amber);">3</span><br/>
+        <span style="color:#3d5470;font-style:italic;">Negative: deformed, abstract, unrealistic materials, incorrect dimensions, flat views:-2</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Rendering software references</strong> — naming <code>3D Studio Max</code> and <code>V-Ray</code> signals the precise quality tier of professional architectural visualisation: correct material response to light, physically accurate shadows, and the clean, polished finish associated with these industry-standard tools.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Material and dimension accuracy</strong> — these tags specifically counter the model's tendency to produce aesthetically plausible but structurally incoherent architecture, where windows float, proportions distort, or materials behave incorrectly under the depicted lighting.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Multi-view request</strong> — <code class="cyan">multiple angles</code> and <code class="cyan">perspective views:3</code> instructs the model to present the structure from several vantage points within a single image — a standard deliverable in professional architectural presentations.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surreal Environment -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Surreal / Imaginative Environment</div>
+        <div class="prompt-card-tag" style="background:#00e5ff14;color:var(--cyan);border:1px solid var(--cyan-dim);">Conceptual</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--violet);">big whale playing in the middle of the desert</span>,
+        <span style="color:var(--amber);">high quality</span>, <span style="color:var(--amber);">high resolution</span>,
+        <span style="color:var(--cyan);">high detail</span>, <span style="color:#a8c0d8;">realistic</span>,
+        <span style="color:var(--violet);">epic cinematic</span>, <span style="color:var(--cyan);">--q 2</span>, <span style="color:var(--cyan);">--v 5</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Conceptual clarity through contradiction</strong> — the power of this prompt lies in the precise collision of two incongruous realities: the desert and the whale. The model understands both environments and both subjects with high fidelity; placing them in contact produces a striking surrealist image precisely because each half is rendered realistically.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Platform parameters</strong> — <code class="cyan">--q 2</code> and <code class="cyan">--v 5</code> are Midjourney-specific flags controlling quality level and model version respectively. On platforms using this syntax, these parameters are appended at the end of the prompt and significantly shape output fidelity.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Environment Prompt Variations</span>
+<span class="comment">// Futuristic performance centre — parametric architecture</span>
+<span class="hlV">square roof</span>, <span class="hl">parametric design</span>, <span class="hlA">architecture</span>,
+<span class="hlV">futuristic art performance center</span>, <span class="hl">high quality</span>, <span class="hlA">8k</span>, <span class="dim">--q 2</span>, <span class="dim">--v 5</span>
+
+<span class="comment">// Flooded ancient city — epic scale</span>
+<span class="hlV">Egyptian old city under the water</span>, <span class="hl">high quality</span>, <span class="hl">high resolution</span>,
+<span class="hlA">high detail</span>, <span class="dim">realistic</span>, <span class="hlV">epic cinematic</span>, <span class="hlA">8k ultra details</span>, <span class="dim">--q 2</span>, <span class="dim">--v 5</span>
+
+<span class="comment">// Desert luxury dining — landscape photography style</span>
+<span class="hlV">5 stars restaurant in the desert</span>, <span class="dim">rocky and sandy terrain</span>,
+<span class="hlA">beautiful landscape</span>, <span class="hl">landscape photography</span>, <span class="hl">depth of view</span>,
+<span class="dim">Fujifilm GFX 100</span>, <span class="hlA">--uplight 8k</span>
+    </div>
+
+    <div class="callout">
+      "The most memorable environmental prompts share a structural characteristic: they are internally coherent even when conceptually radical. A flooded Egyptian city is surreal, but the individual elements — water, ancient stone, atmospheric haze — are each rendered with documentary precision. Surrealism built on realistic foundations consistently outperforms vague fantasy."
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S3 — SCI-FI & FANTASY ═══════════════════════════ -->
+  <div class="divider reveal" id="s3">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 03 — Sci-Fi &amp; Fantasy</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">03 / SCI-FI &amp; FANTASY</span>
+    <h2 class="section-title">Speculative &amp; Fantastical Imagery</h2>
+    <div class="section-body">
+      <p>Science fiction and fantasy are among the categories where AI image generation excels most dramatically — and where prompting discipline matters most. Both genres are broad enough to encompass radically different visual traditions, from the clean minimalism of hard science fiction to the maximalist ornamentation of high fantasy. Without specific directional tags, the model defaults to the most statistically common representations of each genre, which tend to be generic. The key to distinctive results is the same specificity that separates strong prompts in any genre, applied now to the particular conventions of speculative visual storytelling.</p>
+    </div>
+
+    <!-- Sci-Fi Character -->
+    <div class="prompt-card">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Sci-Fi — Humanoid Android</div>
+        <div class="prompt-card-tag" style="background:#c084fc14;color:var(--violet);border:1px solid var(--violet-dim);">Fantasy / Sci-Fi</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--violet);">humanoid android</span>, <span style="color:var(--cyan);">covered in white porcelain skin</span>,
+        <span style="color:var(--cyan);">blue eyes</span>, <span style="color:var(--amber);">white wispy ghost</span>,
+        <span style="color:var(--violet);">wearing ornate armour</span>, <span style="color:var(--amber);">4k realistic fantasy</span>,
+        <span style="color:#a8c0d8;">insane details</span>, <span style="color:var(--cyan);">ghost phantom effect</span>,
+        <span style="color:var(--amber);">hyper detailed</span>, <span style="color:var(--amber);">photoreal</span>, <span style="color:#a8c0d8;">photography</span>,
+        <span style="color:var(--violet);">cinematic lighting</span>, <span style="color:#a8c0d8;">hdr</span>, <span style="color:#a8c0d8;">hd</span>,
+        <span style="color:var(--amber);">cinematography</span>, <span style="color:#a8c0d8;">realism</span>, <span style="color:var(--violet);">fine art digital</span>,
+        <span style="color:#a8c0d8;">HD</span>, <span style="color:var(--cyan);">Mark Molnar mystical</span>,
+        <span style="color:var(--cyan);">redshift rendering</span>, <span style="color:var(--amber);">8k</span>, <span style="color:var(--cyan);">--q 2</span>, <span style="color:var(--cyan);">--v 5</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Material contradiction as design principle</strong> — pairing <code>white porcelain skin</code> with <code>ghost phantom effect</code> defines the character's visual identity through a deliberate material paradox: solid yet translucent, artificial yet ethereal. This specificity prevents the model from falling back on generic android conventions.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Artist and renderer references</strong> — <code class="cyan">Mark Molnar mystical</code> and <code class="cyan">redshift rendering</code> invoke a specific illustrator's stylistic approach and a production-quality rendering engine, respectively. Both function as strong aesthetic anchors that orient the model toward a precise visual territory.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Quality stacking</strong> — layering <code class="amber">hyper detailed</code>, <code class="amber">photoreal</code>, <code class="amber">cinematography</code>, and <code class="amber">8k</code> in close succession signals unambiguously that this image should be rendered at the highest possible level of fidelity — each tag reinforcing the same quality requirement from a different directional angle.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sci-Fi Environment -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Sci-Fi — Interior Environment</div>
+        <div class="prompt-card-tag" style="background:#ffb30014;color:var(--amber);border:1px solid var(--amber-dim);">3D Render</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--cyan);">5 Futuristic Sci-Fi 3D Render</span>::<span style="color:var(--amber);">4</span>
+        <span style="color:var(--cyan);">high-tech</span>, <span style="color:#a8c0d8;">science fiction</span>,
+        <span style="color:var(--amber);">neon lighting</span>, <span style="color:#a8c0d8;">intriguing</span>,
+        <span style="color:var(--violet);">imaginitive futuristic</span>, <span style="color:var(--amber);">detailed</span>,
+        <span style="color:#a8c0d8;">realistic</span>, <span style="color:var(--cyan);">3D rendering</span>,
+        <span style="color:#a8c0d8;">metallic</span>, <span style="color:#a8c0d8;">digital art</span>,
+        <span style="color:var(--violet);">Unreal Engine 6</span>, <span style="color:var(--violet);">3D Studio Max</span>, <span style="color:var(--violet);">V-Ray</span>,
+        <span style="color:var(--violet);">award-winning</span>, <span style="color:var(--violet);">glibatree style</span>:<span style="color:var(--amber);">3</span>
+        <span style="color:#3d5470;font-style:italic;">Negative: deformed, abstract:-2</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Game engine as quality signal</strong> — <code>Unreal Engine 6</code> functions similarly to a rendering software reference in the architecture prompt: it communicates real-time global illumination, physically-based material rendering, and the high-fidelity visual standard associated with AAA game production environments.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Neon lighting as genre anchor</strong> — <code class="amber">neon lighting</code> is one of the most efficient single tags for steering the model toward the atmospheric interior aesthetic that defines science fiction visual culture, evoking the genre's characteristic blue-purple-pink colour palette without requiring explicit colour specification.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Fantasy Robot — Field Environment</span>
+<span class="comment">// Destroyed ancient Egypt setting — sci-fi meets archaeology</span>
+<span style="color:var(--violet);">a robot standing straight</span> in front of the ruins of
+<span style="color:var(--violet);">a destroyed ancient Egypt</span>. <span style="color:var(--text-dim);">No other character on the image.</span>
+<span style="color:var(--amber);">Warm colors.</span> The robot is photographed from behind
+<span style="color:var(--cyan);">with an a6400 24mm 8k</span>
+    </div>
+
+    <div class="highlight-box info">
+      <span class="icon">🔬</span>
+      <div>For sci-fi and fantasy prompts, <strong>contrast between the familiar and the impossible</strong> is the most reliable path to a compelling image. A robot photographed from behind with a specific real-world camera and lens specification, standing in front of a recognisable historical ruin, produces a far more arresting result than a prompt that is uniformly fantastical throughout. The real-world anchor makes the impossible element feel genuinely strange rather than merely invented.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S4 — CHARACTER ART & ILLUSTRATION ═══════════════════════════ -->
+  <div class="divider reveal" id="s4">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 04 — Character Art &amp; Illustration</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">04 / CHARACTER ART &amp; ILLUSTRATION</span>
+    <h2 class="section-title">3D Characters, Cartoons &amp; Concept Art</h2>
+    <div class="section-body">
+      <p>Character art and illustration prompts differ from the photorealistic genres in one crucial respect: the image is expected to look <em>created</em> rather than captured. Rather than invoking cameras and exposure settings, these prompts invoke the software, stylistic traditions, and production pipelines of the digital art industry. The model has been trained on enormous quantities of digital illustration, concept art, 3D character renders, and stylised animation — and it responds with high precision to the vocabulary of those disciplines.</p>
+    </div>
+
+    <!-- 3D Character Concept -->
+    <div class="prompt-card">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">3D Character Concept Art</div>
+        <div class="prompt-card-tag" style="background:#c084fc14;color:var(--violet);border:1px solid var(--violet-dim);">Digital Art</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--cyan);">5 Character Concept Art</span>:<span style="color:var(--amber);">4</span>
+        <span style="color:#a8c0d8;">creative</span>, <span style="color:#a8c0d8;">expressive</span>, <span style="color:var(--amber);">detailed</span>,
+        <span style="color:var(--cyan);">colorful</span>, <span style="color:var(--violet);">stylized anatomy</span>, <span style="color:var(--cyan);">digital art</span>,
+        <span style="color:var(--cyan);">3D rendering</span>, <span style="color:#a8c0d8;">unique</span>, <span style="color:var(--violet);">award-winning</span>,
+        <span style="color:var(--violet);">Adobe Photoshop</span>, <span style="color:var(--violet);">3D Studio Max</span>, <span style="color:var(--violet);">V-Ray</span>,
+        <span style="color:#a8c0d8;">professional</span>, <span style="color:var(--amber);">glibatree style</span>,
+        <span style="color:var(--amber);">well-developed concept</span>, <span style="color:var(--amber);">distinct personality</span>,
+        <span style="color:var(--cyan);">consistent style</span>:<span style="color:var(--amber);">3</span><br/>
+        <span style="color:#3d5470;font-style:italic;">Negative: deformed, simple, undeveloped concept, generic personality, inconsistent styles:-2</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Stylized anatomy as an intentional directive</strong> — explicitly requesting <code>stylized anatomy</code> signals that anatomical accuracy is secondary to aesthetic expressiveness. This prevents the model from defaulting to photorealistic proportions when producing characters that belong more to the animation or graphic novel tradition.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Personality as a visual property</strong> — <code class="amber">distinct personality</code> and <code class="amber">well-developed concept</code> are abstract instructions that nonetheless produce measurable visual differences. The model interprets these as signals to introduce more individualised detail in facial expression, posture, costume design, and colour palette rather than generating a generically appealing character.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Negative weighting for concept integrity</strong> — <code class="rose">generic personality:-2</code> and <code class="rose">inconsistent styles:-2</code> in the negative prompt push hard against the model's statistical tendency toward aesthetically average, stylistically muddled character designs.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cartoon / Comic -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Cartoon / Comic-Style</div>
+        <div class="prompt-card-tag" style="background:#ffb30014;color:var(--amber);border:1px solid var(--amber-dim);">Illustration</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:#a8c0d8;">creative</span>, <span style="color:#a8c0d8;">expressive</span>, <span style="color:var(--amber);">detailed</span>,
+        <span style="color:var(--cyan);">colorful</span>, <span style="color:var(--violet);">stylized anatomy</span>,
+        <span style="color:var(--amber);">high-quality</span>, <span style="color:var(--cyan);">digital art</span>,
+        <span style="color:var(--cyan);">3D rendering</span>, <span style="color:#a8c0d8;">stylized</span>, <span style="color:#a8c0d8;">unique</span>,
+        <span style="color:var(--violet);">award-winning</span>, <span style="color:var(--violet);">Adobe Photoshop</span>,
+        <span style="color:var(--violet);">3D Studio Max</span>, <span style="color:var(--violet);">V-Ray</span>,
+        <span style="color:var(--amber);">playful</span>, <span style="color:var(--amber);">fantastical</span>:<span style="color:var(--cyan);">2</span><br/>
+        <span style="color:#3d5470;font-style:italic;">Negative: plain background, simple, deformed</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Weighted style emphasis</strong> — <code class="amber">fantastical:2</code> applies an inline weight multiplier, instructing the model to lean strongly into imaginative, dreamlike visual properties. This is equivalent to wrapping the tag in double emphasis brackets <code>{"{{}}"}</code> in tag-based syntax.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--rose);"></div>
+          <div class="annotation-text"><strong>Targeted negative prompt</strong> — <code class="rose">plain background</code> specifically prevents the model's common shortcut of rendering cartoon-style figures against a simple white or gradient fill, which tends to look unfinished in this genre.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Album art / editorial -->
+    <div class="prompt-card" style="margin-top:20px;">
+      <div class="prompt-card-header">
+        <div class="prompt-card-genre">Vintage Album Art — Editorial</div>
+        <div class="prompt-card-tag" style="background:#00e5ff14;color:var(--cyan);border:1px solid var(--cyan-dim);">Graphic Design</div>
+      </div>
+      <div class="prompt-card-body">
+        <span style="color:var(--violet);">A vintage-inspired album cover</span> for a rock musician,
+        incorporating <span style="color:var(--amber);">moody lighting</span> and
+        <span style="color:var(--amber);">classic design elements</span>,
+        influenced by the works of <span style="color:var(--cyan);">Reid Miles</span>
+        <span style="color:var(--cyan);">--ar 2:3</span> <span style="color:var(--cyan);">--s 400</span>
+        <span style="color:var(--amber);">8k</span> <span style="color:var(--cyan);">--q 2</span> <span style="color:var(--cyan);">--v 5</span>
+      </div>
+      <div class="prompt-card-annotations">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--cyan);"></div>
+          <div class="annotation-text"><strong>Named artistic influence</strong> — referencing <code class="cyan">Reid Miles</code> — the celebrated Blue Note Records designer — provides the model with an extremely precise aesthetic anchor: high-contrast black and white photography, bold typographic layouts, modernist geometry, and deliberate negative space. A single artist name can be more directive than a dozen descriptive adjectives.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Aspect ratio as format specification</strong> — <code>--ar 2:3</code> produces a portrait-oriented canvas appropriate for album cover artwork, reinforcing the editorial intent of the prompt at the compositional level. Matching the aspect ratio to the intended end use is a habit that consistently improves results.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box warn">
+      <span class="icon">⚠️</span>
+      <div>When referencing named artists or specific stylistic traditions, always verify whether the model is likely to have strong training data for that reference. A deeply specialised or historically obscure artist reference may produce unpredictable results if that artist's work is underrepresented in the model's training. In such cases, describe the stylistic properties in explicit visual terms rather than relying on the name alone.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ S5 — MASTER FORMULA ═══════════════════════════ -->
+  <div class="divider reveal" id="s5">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 05 — Building Your Master Formula</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">05 / YOUR MASTER FORMULA</span>
+    <h2 class="section-title">A Universal Prompt Architecture</h2>
+    <div class="section-body">
+      <p>Having examined how prompts function across six distinct genres — portraiture, food, animals, architecture, sci-fi, and character illustration — a set of universal structural patterns becomes apparent. Every strong prompt, regardless of genre, is built from the same underlying components arranged in the same logical order. The genre determines which specific tags populate each component; the architecture itself remains constant. Understanding this universal architecture is the final conceptual step in moving from responsive to deliberate image generation.</p>
+    </div>
+
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;">Universal Prompt Formula</p>
+
+    <div class="formula">
+      <div class="formula-block">
+        <div class="formula-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">Subject</div>
+        <div class="formula-desc">Who or what</div>
+      </div>
+      <div class="formula-plus">+</div>
+      <div class="formula-block">
+        <div class="formula-tag" style="background:#0d1f10;color:#00e676;border:1px solid #00e67644;">Setting</div>
+        <div class="formula-desc">Where / when</div>
+      </div>
+      <div class="formula-plus">+</div>
+      <div class="formula-block">
+        <div class="formula-tag" style="background:#1f1200;color:var(--amber);border:1px solid var(--amber-dim);">Style / Medium</div>
+        <div class="formula-desc">How it looks</div>
+      </div>
+      <div class="formula-plus">+</div>
+      <div class="formula-block">
+        <div class="formula-tag" style="background:#0d0a1a;color:var(--violet);border:1px solid var(--violet-dim);">Technical Ref</div>
+        <div class="formula-desc">Camera / renderer</div>
+      </div>
+      <div class="formula-plus">+</div>
+      <div class="formula-block">
+        <div class="formula-tag" style="background:#1a0a0f;color:var(--rose);border:1px solid var(--rose-dim);">Quality Tags</div>
+        <div class="formula-desc">How good</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>Each component of the formula can be as minimal or as elaborate as the genre demands. A portrait prompt requires significant investment in the technical reference component (camera body, exposure settings, lighting). An architectural render requires detail in both the style component (rendering software, material properties) and the technical component (angle, scale). A surreal environment prompt may compress subject and setting into a single evocative phrase. The formula is not a rigid template — it is a checklist that ensures no dimension of the image is left undefined.</p>
+    </div>
+
+    <h3 class="sub-heading">The Genre Quick-Reference</h3>
+
+    <div class="genre-grid">
+      <div class="genre-tile">
+        <span class="gt-icon">📸</span>
+        <div class="gt-name">Portrait</div>
+        <div class="gt-desc">Camera body · aperture · ISO · close-up · natural light</div>
+      </div>
+      <div class="genre-tile">
+        <span class="gt-icon">🍽️</span>
+        <div class="gt-name">Food</div>
+        <div class="gt-desc">Appetizing · professional lighting · DSLR · macro or close-up</div>
+      </div>
+      <div class="genre-tile">
+        <span class="gt-icon">🐾</span>
+        <div class="gt-name">Animals</div>
+        <div class="gt-desc">Pet photography · fluffy · playful · shallow depth of field</div>
+      </div>
+      <div class="genre-tile">
+        <span class="gt-icon">🏛️</span>
+        <div class="gt-name">Architecture</div>
+        <div class="gt-desc">3D Studio Max · V-Ray · realistic materials · perspective view</div>
+      </div>
+      <div class="genre-tile">
+        <span class="gt-icon">🚀</span>
+        <div class="gt-name">Sci-Fi</div>
+        <div class="gt-desc">Unreal Engine · neon lighting · metallic · 3D rendering · high-tech</div>
+      </div>
+      <div class="genre-tile">
+        <span class="gt-icon">🎨</span>
+        <div class="gt-name">Illustration</div>
+        <div class="gt-desc">Stylized anatomy · digital art · concept art · distinct personality</div>
+      </div>
+    </div>
+
+    <h3 class="sub-heading">From Formula to Masterwork — A Final Checklist</h3>
+
+    <div class="section-body">
+      <p>Before submitting any prompt for final generation, running through the following checklist takes under thirty seconds and consistently improves output quality. Each question targets a different layer of the formula, ensuring that no component has been left under-specified or accidentally omitted.</p>
+    </div>
+
+    <ul class="step-list">
+      <li><p><strong>Is the subject stated explicitly and early?</strong> Confirm that the most important element of the image — the character, object, or scene — appears in the first few tags, not buried mid-prompt where its influence is diminished.</p></li>
+      <li><p><strong>Is the genre communicated through specific vocabulary?</strong> Replace generic descriptors ("beautiful," "nice") with genre-native terms ("appetizing composition" for food, "cinematic lighting" for portraiture, "parametric design" for architecture).</p></li>
+      <li><p><strong>Is there a technical reference?</strong> Photography genres need a camera model; 3D render genres need a software reference; illustration genres need a style or tool attribution. Without this anchor, the model selects its own technical frame — which may not align with your intent.</p></li>
+      <li><p><strong>Are emphasis brackets applied where needed?</strong> Review the prompt for any element whose absence or incorrectness would constitute a failure of the image. Apply <code>{{}}</code> to those elements to ensure they receive priority during generation.</p></li>
+      <li><p><strong>Is the Undesired Content field populated?</strong> Add at minimum <code class="rose">blurry</code>, <code class="rose">bad anatomy</code>, and genre-specific failure modes (such as <code class="rose">unappetizing</code> for food or <code class="rose">flat views</code> for architecture) before generating.</p></li>
+      <li><p><strong>Does the canvas aspect ratio match the compositional intent?</strong> A mismatched canvas will force the model into awkward cropping decisions that undermine even a well-structured prompt.</p></li>
+    </ul>
+
+    <div class="card amber" style="margin-top:36px;">
+      <span class="card-label">One More Prompt — Putting It All Together</span>
+      <div class="card-title">A Fully Annotated Final Example</div>
+      <div class="code-block" style="margin:16px 0 0;">
+        <span class="line-label">Complete Prompt</span>
+<span class="comment">// Industrial living room — editorial photography / interior design</span>
+<span class="hlV">photo of an industrial and gothic style living room</span>,
+with a <span class="hlA">high ceiling</span> and a <span class="hlA">large bay window</span>,
+<span class="hl">armchairs</span> and <span class="hl">black chesterfield sofa</span>,
+with a <span class="hlV">glamorous 60s style decoration</span>
+with <span class="hlV">posters of old movies from the 30s on the wall</span>
+<span class="dim">--s 1000 --s 30000 --q 2 --s 750 --q 2 --v 5</span>
+      </div>
+      <div class="prompt-card-annotations" style="padding:16px 0 0;">
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--violet);"></div>
+          <div class="annotation-text"><strong>Period contradiction as atmospheric depth</strong> — the prompt layers three distinct historical references (industrial/gothic architecture, 1960s glamour, 1930s cinema) into a single space. This deliberate anachronism is not a mistake — it is the visual concept of the image, and the model interprets the collision of specific eras as a rich, textured interior rather than a confused one.</div>
+        </div>
+        <div class="annotation">
+          <div class="annotation-dot" style="background:var(--amber);"></div>
+          <div class="annotation-text"><strong>Specific furnishing details</strong> — naming <code class="amber">black chesterfield sofa</code> rather than simply "sofa" and <code class="amber">large bay window</code> rather than "window" provides the model with enough specificity to construct a coherent, recognisable interior rather than a generic room.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETION BANNER -->
+    <div class="complete-banner reveal" style="margin-top:60px;">
+      <span class="cb-label">Guide Complete</span>
+      <h2>You Now Speak the Language<br/>of AI Image Generation</h2>
+      <p>Across four parts, this guide has taken you from the mechanics of a single tag to the architecture of complex, genre-specific prompts. The principles remain constant regardless of what you create: precision over vagueness, order over randomness, and iteration over expectation. The rest is practice.</p>
+      <div class="part-pills">
+        <div class="part-pill" style="color:var(--cyan);border-color:var(--cyan-dim);background:#00e5ff07;">Part I — Foundations</div>
+        <div class="part-pill" style="color:var(--amber);border-color:var(--amber-dim);background:#ffb30007;">Part II — Settings</div>
+        <div class="part-pill" style="color:#00e676;border-color:#00e67644;background:#00e67607;">Part III — Characters</div>
+        <div class="part-pill" style="color:var(--violet);border-color:var(--violet-dim);background:#c084fc07;">Part IV — Genres</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+  <footer class="guide-footer reveal">
+    <div>
+      <div style="font-family:'Orbitron',monospace;color:var(--text-dim);font-size:10px;letter-spacing:0.2em;">PART IV OF IV</div>
+      <div style="margin-top:6px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">Real-World Prompts &amp; Genre Mastery · Complete</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:6px;">SERIES COMPLETE</div>
+      <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--violet);letter-spacing:0.05em;text-shadow:var(--glow-v);">AI Image Prompting — All Four Parts</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = Math.min(pct, 100) + '%';
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  reveals.forEach(r => obs.observe(r));
+
+  // Nav dots
+  const sections = ['s0','s1','s2','s3','s4','s5'];
+  const labels   = ['Intro','Photography','Architecture','Sci-Fi & Fantasy','Character Art','Master Formula'];
+  const navEl    = document.getElementById('navDots');
+
+  sections.forEach((id, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.title = labels[i];
+    dot.onclick = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    navEl.appendChild(dot);
+  });
+
+  const sectionEls = sections.map(id => document.getElementById(id));
+  const dotEls     = navEl.querySelectorAll('.nav-dot');
+
+  const dotObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const i = sectionEls.indexOf(e.target);
+      if (i >= 0 && e.isIntersecting) {
+        dotEls.forEach(d => d.classList.remove('active'));
+        dotEls[i]?.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -40% 0px' });
+
+  sectionEls.forEach(el => el && dotObs.observe(el));
+</script>
+</body>
+</html>
