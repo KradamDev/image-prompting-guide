@@ -60,49 +60,233 @@
     padding: 0 28px 100px;
   }
 
-  /* header — identical markup/classes to the injected part headers */
-  .ipg-header {
-    position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 200;
-    background: rgba(6, 8, 15, 0.82);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
-    border-bottom: 1px solid rgba(30, 45, 64, 0.9);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  }
-  .ipg-header-inner {
-    max-width: 1180px; height: 100%; margin: 0 auto; padding: 0 20px;
-    display: flex; align-items: center; justify-content: space-between; gap: 18px;
-  }
-  .ipg-brand {
-    display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
-    color: #e8f2fb; font-family: 'Orbitron', sans-serif; font-size: 0.74rem;
-    font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
-  }
-  .ipg-brand-mark { color: var(--cyan); font-size: 0.62rem; text-shadow: 0 0 12px var(--cyan); }
-  .ipg-parts { display: flex; align-items: center; gap: 6px; }
-  .ipg-pill {
-    display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px;
-    border: 1px solid rgba(30, 45, 64, 0.95); border-radius: 999px; text-decoration: none;
-    color: #8fa4bb; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
-    letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
-    transition: color 0.22s, border-color 0.22s, background 0.22s;
-  }
-  .ipg-num { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.78rem; color: #c8d6e5; }
-  .ipg-pill:hover, .ipg-pill:focus-visible {
-    color: #e8f2fb; border-color: rgba(0, 229, 255, 0.45);
-    background: rgba(0, 229, 255, 0.06); outline: none;
-  }
-  .ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
-  @media (max-width: 760px) {
-    .ipg-header-inner { padding: 0 14px; gap: 10px; }
-    .ipg-brand-text { display: none; }
-    .ipg-pill { padding: 7px 11px; gap: 0; }
-    .ipg-label { display: none; }
-  }
-  @media (max-width: 420px) {
-    .ipg-brand { display: none; }
-    .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
-  }
+/* ═══════════════════════════════════════════════════════════
+   SHARED GUIDE HEADER — added by the site build.
+   Everything below is new; the original stylesheet is untouched.
+   ═══════════════════════════════════════════════════════════ */
+:root { --ipg-h: 56px; --ipg-accent: #00e5ff; }
+
+.ipg-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ipg-h);
+  z-index: 200;
+  background: rgba(6, 8, 15, 0.82);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.ipg-header-inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ipg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+  color: #e8f2fb;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.ipg-brand:hover, .ipg-brand:focus-visible { color: var(--ipg-accent); }
+.ipg-brand-mark {
+  color: var(--ipg-accent);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-shadow: 0 0 12px var(--ipg-accent);
+}
+.ipg-parts { display: flex; align-items: center; gap: 6px; }
+.ipg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 999px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.ipg-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  color: #c8d6e5;
+  transition: color 0.22s;
+}
+.ipg-pill:hover, .ipg-pill:focus-visible {
+  color: #e8f2fb;
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(0, 229, 255, 0.06);
+  outline: none;
+}
+.ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+.ipg-pill.is-active {
+  color: var(--ipg-accent);
+  border-color: var(--ipg-accent);
+  background: color-mix(in srgb, var(--ipg-accent) 12%, transparent);
+  box-shadow: 0 0 18px -4px var(--ipg-accent);
+  cursor: default;
+}
+.ipg-pill.is-active .ipg-num { color: var(--ipg-accent); }
+
+/* ── hamburger (mobile only) ── */
+.ipg-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 40px;
+  height: 34px;
+  padding: 0 9px;
+  background: transparent;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: border-color 0.22s, background 0.22s;
+}
+.ipg-burger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: #c8d6e5;
+  transition: transform 0.26s, opacity 0.18s, background 0.22s;
+}
+.ipg-burger:hover, .ipg-burger:focus-visible {
+  border-color: var(--ipg-accent);
+  outline: none;
+}
+.ipg-burger:hover span, .ipg-burger:focus-visible span { background: var(--ipg-accent); }
+.ipg-burger.is-open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.ipg-burger.is-open span:nth-child(2) { opacity: 0; }
+.ipg-burger.is-open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* ── right-hand drawer ── */
+.ipg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(3, 5, 10, 0.62);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s;
+}
+.ipg-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+.ipg-drawer {
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 300;
+  width: min(292px, 84vw);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0a0e16;
+  border-left: 1px solid var(--border, #1e2d40);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.6);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.ipg-drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
+}
+.ipg-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+}
+.ipg-drawer-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #e8f2fb;
+  line-height: 1.5;
+}
+.ipg-drawer-close {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 8px;
+  color: #c8d6e5;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.22s, color 0.22s;
+}
+.ipg-drawer-close:hover, .ipg-drawer-close:focus-visible {
+  border-color: var(--ipg-accent); color: var(--ipg-accent); outline: none;
+}
+.ipg-drawer-nav { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; }
+.ipg-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.ipg-drawer-link .ipg-num { font-size: 0.86rem; }
+.ipg-drawer-link:hover, .ipg-drawer-link:focus-visible {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8f2fb;
+  border-color: rgba(30, 45, 64, 0.95);
+  outline: none;
+}
+.ipg-drawer-link.is-active {
+  color: var(--ipg-accent);
+  border-color: color-mix(in srgb, var(--ipg-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--ipg-accent) 10%, transparent);
+}
+.ipg-drawer-link.is-active .ipg-num { color: var(--ipg-accent); }
+
+@media (max-width: 760px) {
+  .ipg-header-inner { padding: 0 14px; gap: 10px; }
+  .ipg-brand { font-size: 0.68rem; letter-spacing: 0.11em; gap: 8px; }
+  .ipg-parts { display: none; }
+  .ipg-burger { display: flex; flex-shrink: 0; }
+}
 
   /* hero */
   .hero { padding: 130px 0 64px; max-width: 780px; }
@@ -240,8 +424,70 @@
       <a class="ipg-pill" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
       <a class="ipg-pill" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
     </nav>
+    <button class="ipg-burger" id="ipgBurger" type="button" aria-label="Open guide menu" aria-expanded="false" aria-controls="ipgDrawer">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
+
+<div class="ipg-scrim" id="ipgScrim"></div>
+
+<aside class="ipg-drawer" id="ipgDrawer" aria-label="Guide parts menu" aria-hidden="true">
+  <div class="ipg-drawer-head">
+    <span class="ipg-drawer-title">Image Prompting Guide</span>
+    <button class="ipg-drawer-close" id="ipgClose" type="button" aria-label="Close menu">&times;</button>
+  </div>
+  <nav class="ipg-drawer-nav">
+      <a class="ipg-drawer-link" href="prompting-guide-part1.html"><span class="ipg-num">1</span><span>Foundations</span></a>
+      <a class="ipg-drawer-link" href="prompting-guide-part2.html"><span class="ipg-num">2</span><span>Settings</span></a>
+      <a class="ipg-drawer-link" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span>Advanced</span></a>
+      <a class="ipg-drawer-link" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span>Real World</span></a>
+  </nav>
+</aside>
+
+<script>
+(function () {
+  var burger = document.getElementById('ipgBurger');
+  var drawer = document.getElementById('ipgDrawer');
+  var scrim  = document.getElementById('ipgScrim');
+  var close  = document.getElementById('ipgClose');
+  if (!burger || !drawer || !scrim) return;
+
+  function openDrawer() {
+    drawer.classList.add('is-open');
+    scrim.classList.add('is-open');
+    burger.classList.add('is-open');
+    burger.setAttribute('aria-expanded', 'true');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    drawer.classList.remove('is-open');
+    scrim.classList.remove('is-open');
+    burger.classList.remove('is-open');
+    burger.setAttribute('aria-expanded', 'false');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  burger.addEventListener('click', function () {
+    drawer.classList.contains('is-open') ? closeDrawer() : openDrawer();
+  });
+  if (close) close.addEventListener('click', closeDrawer);
+  scrim.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDrawer();
+  });
+  drawer.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeDrawer);
+  });
+  var wide = window.matchMedia('(min-width: 761px)');
+  var onChange = function (e) { if (e.matches) closeDrawer(); };
+  if (wide.addEventListener) wide.addEventListener('change', onChange);
+  else if (wide.addListener) wide.addListener(onChange);
+})();
+</script>
+
 
 <main class="wrap">
   <section class="hero">
