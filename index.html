@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Image Prompting Guide — A Four-Part Course in AI Image Prompting</title>
+<meta name="description" content="A four-part guide to prompting AI image models: foundations, settings and controls, advanced character work, and real-world genre prompts." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #06080f;
+    --bg2: #0c1018;
+    --cyan: #00e5ff;
+    --amber: #ffb300;
+    --green: #00e676;
+    --violet: #c084fc;
+    --text: #c8d6e5;
+    --text-dim: #6b7f96;
+    --border: #1e2d40;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%; left: -20%;
+    width: 80vw; height: 80vw;
+    background: radial-gradient(circle, #00e5ff0a 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 0 28px 100px;
+  }
+
+  /* header — identical markup/classes to the injected part headers */
+  .ipg-header {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 200;
+    background: rgba(6, 8, 15, 0.82);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .ipg-header-inner {
+    max-width: 1180px; height: 100%; margin: 0 auto; padding: 0 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  }
+  .ipg-brand {
+    display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+    color: #e8f2fb; font-family: 'Orbitron', sans-serif; font-size: 0.74rem;
+    font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
+  }
+  .ipg-brand-mark { color: var(--cyan); font-size: 0.62rem; text-shadow: 0 0 12px var(--cyan); }
+  .ipg-parts { display: flex; align-items: center; gap: 6px; }
+  .ipg-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px;
+    border: 1px solid rgba(30, 45, 64, 0.95); border-radius: 999px; text-decoration: none;
+    color: #8fa4bb; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+    transition: color 0.22s, border-color 0.22s, background 0.22s;
+  }
+  .ipg-num { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.78rem; color: #c8d6e5; }
+  .ipg-pill:hover, .ipg-pill:focus-visible {
+    color: #e8f2fb; border-color: rgba(0, 229, 255, 0.45);
+    background: rgba(0, 229, 255, 0.06); outline: none;
+  }
+  .ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+  @media (max-width: 760px) {
+    .ipg-header-inner { padding: 0 14px; gap: 10px; }
+    .ipg-brand-text { display: none; }
+    .ipg-pill { padding: 7px 11px; gap: 0; }
+    .ipg-label { display: none; }
+  }
+  @media (max-width: 420px) {
+    .ipg-brand { display: none; }
+    .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
+  }
+
+  /* hero */
+  .hero { padding: 130px 0 64px; max-width: 780px; }
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 999px;
+    padding: 6px 16px;
+    margin-bottom: 28px;
+    background: rgba(0, 229, 255, 0.05);
+  }
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 5.4vw, 3.5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  h1 .accent { color: var(--cyan); text-shadow: 0 0 24px rgba(0, 229, 255, 0.45); }
+  .hero p {
+    margin-top: 24px;
+    font-size: 1.06rem;
+    color: var(--text-dim);
+    max-width: 620px;
+  }
+  .hero p strong { color: var(--text); font-weight: 600; }
+
+  /* cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+  }
+  .card {
+    --accent: var(--cyan);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 26px 24px 24px;
+    background: linear-gradient(160deg, var(--bg2) 0%, rgba(12, 16, 24, 0.6) 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0.75;
+  }
+  .card:hover, .card:focus-visible {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -22px var(--accent);
+    outline: none;
+  }
+  .card-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.12rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #fff;
+  }
+  .card-blurb { font-size: 0.94rem; color: var(--text-dim); line-height: 1.65; }
+  .card-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4d5f73;
+    margin-top: auto;
+    padding-top: 8px;
+  }
+  .card-cta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card:hover .card-cta span, .card:focus-visible .card-cta span { transform: translateX(4px); }
+  .card-cta span { transition: transform 0.25s; }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4d5f73;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    justify-content: space-between;
+  }
+  a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<header class="ipg-header">
+  <div class="ipg-header-inner">
+    <a class="ipg-brand" href="index.html" title="Guide index">
+      <span class="ipg-brand-mark" aria-hidden="true">&#9670;</span>
+      <span class="ipg-brand-text">Image Prompting Guide</span>
+    </a>
+    <nav class="ipg-parts" aria-label="Guide parts">
+      <a class="ipg-pill" href="prompting-guide-part1.html"><span class="ipg-num">1</span><span class="ipg-label">Foundations</span></a>
+      <a class="ipg-pill" href="prompting-guide-part2.html"><span class="ipg-num">2</span><span class="ipg-label">Settings</span></a>
+      <a class="ipg-pill" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
+      <a class="ipg-pill" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="badge">Four parts &nbsp;·&nbsp; Prompting</div>
+    <h1>Image <span class="accent">Prompting</span><br />Guide</h1>
+    <p>A structured course in talking to AI image models. Start with how a prompt is read, move through the settings that shape output, build consistent characters, then apply it all across real genres. <strong>Read in order, or jump straight to the part you need.</strong></p>
+  </section>
+
+  <section class="cards" aria-label="Guide parts">
+
+      <a class="card" href="prompting-guide-part1.html" style="--accent:#00e5ff">
+        <span class="card-num">Part I</span>
+        <h2 class="card-title">The Art of Prompting AI Image Models</h2>
+        <p class="card-blurb">What a prompt actually is, prose versus tag syntax, token limits, and emphasis weighting — the core mechanics everything else sits on.</p>
+        <span class="card-meta">Beginner &nbsp;·&nbsp; Core Mechanics</span>
+        <span class="card-cta">Read Part 1 <span aria-hidden="true">&#8594;</span></span>
+      </a>
+      <a class="card" href="prompting-guide-part2.html" style="--accent:#ffb300">
+        <span class="card-num">Part II</span>
+        <h2 class="card-title">Dialing In the Machine</h2>
+        <p class="card-blurb">Steps, prompt guidance, seeds, strength and noise, and resolution strategy — the dials that decide how obedient or how creative the model is.</p>
+        <span class="card-meta">Beginner–Intermediate &nbsp;·&nbsp; Technical Controls</span>
+        <span class="card-cta">Read Part 2 <span aria-hidden="true">&#8594;</span></span>
+      </a>
+      <a class="card" href="prompting-guide-part3.html" style="--accent:#00e676">
+        <span class="card-num">Part III</span>
+        <h2 class="card-title">Building Characters and Pushing Craft</h2>
+        <p class="card-blurb">Mixing styles and mediums, consistent characters, framing tags and camera angles, multi-character prompts, and sequential panels.</p>
+        <span class="card-meta">Intermediate &nbsp;·&nbsp; Character & Advanced Structure</span>
+        <span class="card-cta">Read Part 3 <span aria-hidden="true">&#8594;</span></span>
+      </a>
+      <a class="card" href="prompting-guide-part4.html" style="--accent:#c084fc">
+        <span class="card-num">Part IV</span>
+        <h2 class="card-title">Prompts in the Real World</h2>
+        <p class="card-blurb">Applied genre work — portraits, food and animals, spaces and scenes, speculative imagery, 3D characters, and one universal prompt architecture.</p>
+        <span class="card-meta">All Levels &nbsp;·&nbsp; Applied Genre Prompting</span>
+        <span class="card-cta">Read Part 4 <span aria-hidden="true">&#8594;</span></span>
+      </a>
+  </section>
+
+  <footer>
+    <span>Image Prompting Guide &nbsp;·&nbsp; 4 parts</span>
+    <span>Start with Part I</span>
+  </footer>
+</main>
+
+</body>
+</html>
