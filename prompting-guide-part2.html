@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Image Prompting — Part II: Settings & Controls</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #06080f;
+    --bg2:      #0c1018;
+    --bg3:      #111722;
+    --cyan:     #00e5ff;
+    --cyan-dim: #00e5ff44;
+    --amber:    #ffb300;
+    --amber-dim:#ffb30033;
+    --rose:     #ff4d6d;
+    --text:     #c8d6e5;
+    --text-dim: #6b7f96;
+    --border:   #1e2d40;
+    --glow-c:   0 0 20px #00e5ff55, 0 0 60px #00e5ff22;
+    --glow-a:   0 0 20px #ffb30055, 0 0 60px #ffb30022;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    right: -20%;
+    width: 80vw;
+    height: 80vw;
+    background: radial-gradient(circle, #ffb30008 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 0 40px;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    background: #ffb3000a;
+    border-radius: 4px;
+    padding: 6px 14px;
+    margin-bottom: 32px;
+    width: fit-content;
+    animation: fadein 0.8s ease both;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: #fff;
+    animation: fadein 0.8s 0.1s ease both;
+  }
+
+  .hero-title .accent { color: var(--amber); text-shadow: var(--glow-a); }
+
+  .hero-subtitle {
+    margin-top: 22px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    max-width: 560px;
+    animation: fadein 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    animation: fadein 0.8s 0.3s ease both;
+  }
+
+  .hero-meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .hero-meta-item span {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px; left: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    animation: fadein 1s 0.8s ease both;
+  }
+
+  .scroll-hint::before {
+    content: '';
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--amber));
+    animation: slidedown 1.6s ease infinite;
+  }
+
+  @keyframes slidedown {
+    0%  { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100%{ transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  @keyframes fadein {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 64px 0 48px;
+  }
+
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  .divider-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .section-body { color: var(--text); font-size: 1rem; }
+  .section-body p + p { margin-top: 16px; }
+
+  strong { color: #fff; font-weight: 600; }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--cyan);
+    background: #00e5ff0d;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  code.amber { color: var(--amber); background: #ffb3000d; }
+  code.rose  { color: var(--rose);  background: #ff4d6d0d; }
+  code.green { color: #69db7c;      background: #69db7c0d; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: #2a3f58; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--cyan), transparent);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .card.amber::before { background: linear-gradient(to bottom, var(--amber), transparent); }
+  .card.rose::before  { background: linear-gradient(to bottom, var(--rose), transparent); }
+  .card.green::before { background: linear-gradient(to bottom, #69db7c, transparent); }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .card.amber .card-label { color: var(--amber); }
+  .card.rose  .card-label { color: var(--rose);  }
+  .card.green .card-label { color: #69db7c; }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #a8c0d8;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .line-label {
+    position: absolute;
+    top: 12px; right: 16px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .code-block .hl   { color: var(--cyan); }
+  .code-block .hlA  { color: var(--amber); }
+  .code-block .hlR  { color: var(--rose); }
+  .code-block .hlG  { color: #69db7c; }
+  .code-block .dim  { color: var(--text-dim); }
+  .code-block .comment { color: #3d5470; font-style: italic; }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .highlight-box .icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .highlight-box.tip  { border: 1px solid #00e5ff44; background: #00e5ff07; }
+  .highlight-box.warn { border: 1px solid #ffb30044; background: #ffb30007; }
+  .highlight-box.info { border: 1px solid #69db7c33; background: #69db7c07; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--amber);
+    padding: 6px 0 6px 20px;
+    margin: 24px 0;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 1rem;
+  }
+  .callout.cyan { border-color: var(--cyan); }
+
+  /* ── SLIDER VISUALISER ── */
+  .slider-vis {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+
+  .slider-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: grid;
+    grid-template-columns: 140px 1fr 120px;
+    gap: 20px;
+  }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 120px;
+    align-items: center;
+    padding: 15px 24px;
+    border-bottom: 1px solid #0e1621;
+    gap: 20px;
+  }
+
+  .slider-row:last-child { border-bottom: none; }
+
+  .slider-label-col {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .slider-label-col strong {
+    color: var(--text);
+    font-size: 13px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .slider-track {
+    height: 8px;
+    background: #0e1621;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .slider-fill {
+    height: 100%;
+    border-radius: 4px;
+    position: absolute;
+    left: 0; top: 0;
+  }
+
+  .slider-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--bg2);
+  }
+
+  .slider-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  /* ── GUIDANCE TABLE ── */
+  .guidance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 4px;
+    font-size: 14px;
+  }
+
+  .guidance-table thead tr { border-bottom: 1px solid var(--border); }
+
+  .guidance-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  .guidance-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #0e1621;
+    vertical-align: middle;
+    color: var(--text);
+    font-size: 13.5px;
+  }
+
+  .guidance-table tr:last-child td { border-bottom: none; }
+  .guidance-table tr:hover td { background: #0c1018; }
+
+  .range-pill {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* ── DUAL PANEL ── */
+  .dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  @media(max-width:600px){ .dual { grid-template-columns: 1fr; } }
+
+  .dual-panel {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+
+  .dual-panel h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .dual-panel.cyan h4  { color: var(--cyan);  border-color: var(--cyan-dim); }
+  .dual-panel.amber h4 { color: var(--amber); border-color: var(--amber-dim); }
+
+  /* ── STEP LIST ── */
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid #ffb30033;
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-list li p { color: var(--text); font-size: 0.97rem; }
+
+  /* ── SEED DEMO ── */
+  .seed-demo {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px 0;
+    margin: 24px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    overflow: hidden;
+  }
+
+  .seed-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #0e1621;
+  }
+
+  .seed-row:last-child { border-bottom: none; }
+
+  .seed-icon { font-size: 18px; flex-shrink: 0; }
+
+  .seed-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .seed-text strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  .seed-val {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── MATRIX ── */
+  .matrix {
+    display: grid;
+    grid-template-columns: 38px 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+    font-size: 13px;
+  }
+
+  .matrix-cell {
+    background: var(--bg2);
+    padding: 18px 20px;
+    line-height: 1.5;
+  }
+
+  .matrix-header {
+    background: var(--bg3);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 10px;
+  }
+
+  .matrix-label {
+    background: var(--bg3);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    text-align: center;
+    padding: 20px 10px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .result-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* ── ENHANCE FLOW ── */
+  .enhance-flow {
+    display: flex;
+    align-items: stretch;
+    margin: 28px 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .flow-step {
+    flex: 1;
+    padding: 24px 16px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .flow-step:last-child { border-right: none; }
+
+  .flow-step .f-icon { font-size: 26px; display: block; margin-bottom: 10px; }
+
+  .flow-step .f-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .flow-step .f-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .guide-progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    z-index: 100;
+  }
+
+  .guide-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--amber), var(--cyan));
+    box-shadow: 0 0 10px var(--amber);
+    transition: width 0.1s linear;
+  }
+
+  /* ── NAV DOTS ── */
+  .top-nav {
+    position: fixed;
+    top: 12px; right: 28px;
+    z-index: 99;
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .nav-dot.active {
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+  }
+
+  /* ── REVEAL ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── FOOTER ── */
+  .guide-footer {
+    margin-top: 100px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+</style>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   SHARED GUIDE HEADER — added by the site build.
+   Everything below is new; the original stylesheet is untouched.
+   ═══════════════════════════════════════════════════════════ */
+:root { --ipg-h: 56px; --ipg-accent: #ffb300; }
+
+body { padding-top: var(--ipg-h); }
+.hero { min-height: calc(100vh - var(--ipg-h)); }
+.guide-progress { top: var(--ipg-h); }
+.top-nav { top: calc(var(--ipg-h) + 16px); }
+section[id], .divider[id], .hero[id] { scroll-margin-top: calc(var(--ipg-h) + 24px); }
+
+.ipg-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ipg-h);
+  z-index: 200;
+  background: rgba(6, 8, 15, 0.82);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.ipg-header-inner {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ipg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #e8f2fb;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.ipg-brand:hover, .ipg-brand:focus-visible { color: var(--ipg-accent); }
+.ipg-brand-mark {
+  color: var(--ipg-accent);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-shadow: 0 0 12px var(--ipg-accent);
+}
+.ipg-parts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ipg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(30, 45, 64, 0.95);
+  border-radius: 999px;
+  text-decoration: none;
+  color: #8fa4bb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.ipg-num {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  color: #c8d6e5;
+  transition: color 0.22s;
+}
+.ipg-pill:hover, .ipg-pill:focus-visible {
+  color: #e8f2fb;
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(0, 229, 255, 0.06);
+  outline: none;
+}
+.ipg-pill:hover .ipg-num, .ipg-pill:focus-visible .ipg-num { color: #fff; }
+.ipg-pill.is-active {
+  color: var(--ipg-accent);
+  border-color: var(--ipg-accent);
+  background: color-mix(in srgb, var(--ipg-accent) 12%, transparent);
+  box-shadow: 0 0 18px -4px var(--ipg-accent);
+  cursor: default;
+}
+.ipg-pill.is-active .ipg-num { color: var(--ipg-accent); }
+
+@media (max-width: 760px) {
+  .ipg-header-inner { padding: 0 14px; gap: 10px; }
+  .ipg-brand-text { display: none; }
+  .ipg-pill { padding: 7px 11px; gap: 0; }
+  .ipg-label { display: none; }
+}
+@media (max-width: 420px) {
+  .ipg-brand { display: none; }
+  .ipg-parts { gap: 5px; flex: 1; justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+
+<!-- Shared guide navigation (added by the site build) -->
+<header class="ipg-header">
+  <div class="ipg-header-inner">
+    <a class="ipg-brand" href="index.html" title="Guide index">
+      <span class="ipg-brand-mark" aria-hidden="true">&#9670;</span>
+      <span class="ipg-brand-text">Image Prompting Guide</span>
+    </a>
+    <nav class="ipg-parts" aria-label="Guide parts">
+      <a class="ipg-pill" href="prompting-guide-part1.html"><span class="ipg-num">1</span><span class="ipg-label">Foundations</span></a>
+      <a class="ipg-pill is-active" href="prompting-guide-part2.html" aria-current="page"><span class="ipg-num">2</span><span class="ipg-label">Settings</span></a>
+      <a class="ipg-pill" href="prompting-guide-part3.html"><span class="ipg-num">3</span><span class="ipg-label">Advanced</span></a>
+      <a class="ipg-pill" href="prompting-guide-part4.html"><span class="ipg-num">4</span><span class="ipg-label">Real World</span></a>
+    </nav>
+  </div>
+</header>
+
+<div class="guide-progress"><div class="guide-progress-bar" id="progressBar"></div></div>
+<nav class="top-nav" id="navDots"></nav>
+
+<div class="page-wrap">
+
+  <!-- ═══════════════════════════════════ HERO ═══════════════════════════════════ -->
+  <section class="hero" id="s0">
+    <div class="badge">Part II of IV &nbsp;·&nbsp; Settings &amp; Controls</div>
+    <h1 class="hero-title">Dialing In the <span class="accent">Machine</span></h1>
+    <p class="hero-subtitle">Beyond the prompt itself lies a set of numerical controls that govern how the AI interprets, refines, and reproduces its output. Understanding these settings separates deliberate creators from those who simply press Generate and hope.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">LEVEL<span>Beginner–Intermediate</span></div>
+      <div class="hero-meta-item">SECTIONS<span>5 in Part II</span></div>
+      <div class="hero-meta-item">FOCUS<span>Technical Controls</span></div>
+    </div>
+    <div class="scroll-hint">scroll to begin</div>
+  </section>
+
+  <!-- ═══════════════════════════════════ S1 — STEPS ═══════════════════════════════════ -->
+  <div class="divider reveal" id="s1">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 01 — Steps</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">01 / STEPS</span>
+    <h2 class="section-title">Steps — How Many Times the AI Thinks</h2>
+    <div class="section-body">
+      <p>When you press Generate, the AI does not produce a finished image in a single calculation. It begins from a field of structured noise and progressively sculpts that noise over multiple passes — each pass called a <strong>step</strong>. At each step, the model compares the current state of the image against your prompt and nudges the result closer to what you have described.</p>
+      <p>A lower step count produces output quickly but leaves the image under-refined — textures appear soft, fine details are absent, and the composition may feel loosely formed. A higher step count grants the model more opportunities to commit to detail, yielding sharper and more coherent imagery. That said, returns diminish substantially beyond a certain point: the visual difference between 50 and 100 steps is far less significant than the difference between 10 and 28.</p>
+    </div>
+
+    <div class="slider-vis">
+      <div class="slider-header">
+        <span>Steps Value</span>
+        <span>Quality vs. Speed</span>
+        <span>Best For</span>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label-col"><strong>10 – 15</strong>Very Low</div>
+        <div class="slider-track">
+          <div class="slider-fill" style="width:14%;background:linear-gradient(to right,#1e2d40,#2a3f58);"></div>
+          <div class="slider-thumb" style="left:14%;background:#2a3f58;box-shadow:none;"></div>
+        </div>
+        <div class="slider-desc">Draft sketching<br/>Rapid ideation</div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label-col"><strong>20 – 28</strong>Recommended</div>
+        <div class="slider-track">
+          <div class="slider-fill" style="width:44%;background:linear-gradient(to right,#004d5c,#00e5ff88);"></div>
+          <div class="slider-thumb" style="left:44%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);"></div>
+        </div>
+        <div class="slider-desc" style="color:var(--cyan);">Composition review<br/>Efficient quality</div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label-col"><strong>40 – 60</strong>High</div>
+        <div class="slider-track">
+          <div class="slider-fill" style="width:70%;background:linear-gradient(to right,#00e5ff55,var(--amber));"></div>
+          <div class="slider-thumb" style="left:70%;background:var(--amber);box-shadow:0 0 8px var(--amber);"></div>
+        </div>
+        <div class="slider-desc" style="color:var(--amber);">Final renders<br/>Detail-critical work</div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label-col"><strong>80 – 100+</strong>Diminishing</div>
+        <div class="slider-track">
+          <div class="slider-fill" style="width:95%;background:linear-gradient(to right,var(--amber),var(--rose));"></div>
+          <div class="slider-thumb" style="left:95%;background:var(--rose);box-shadow:0 0 8px var(--rose);"></div>
+        </div>
+        <div class="slider-desc" style="color:var(--rose);">Marginal gains<br/>High resource cost</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>The practical approach most experienced users follow is to generate at a modest step count — around 20 to 28 — until a satisfying composition emerges. Only then do they commit to a higher step count for the final render. This conserves time and resources without sacrificing quality in the end result.</p>
+    </div>
+
+    <div class="highlight-box tip">
+      <span class="icon">💡</span>
+      <div>Many platforms offer free generation for images produced at 28 steps or fewer within a standard resolution range. Staying within this threshold during the exploration phase is a sound habit, particularly when iterating through many prompt variations in a single session.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ S2 — GUIDANCE ═══════════════════════════════════ -->
+  <div class="divider reveal" id="s2">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 02 — Prompt Guidance</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">02 / PROMPT GUIDANCE</span>
+    <h2 class="section-title">Prompt Guidance — Obedience vs. Creativity</h2>
+    <div class="section-body">
+      <p>If Steps controls how long the AI refines an image, <strong>Prompt Guidance</strong> — also labelled CFG Scale or Guidance Scale on some platforms — controls how strictly the AI adheres to your instructions during that refinement. It functions as a dial between creative liberty and disciplined compliance.</p>
+      <p>At low guidance values, the model treats your prompt as loose inspiration, interpreting its spirit while feeling free to introduce its own creative variations. Results are often dreamlike and painterly, though less predictable. At high guidance values, the model holds your prompt as a rigid specification and tries to satisfy every element you have described — producing crisper, more literal images, but risking over-saturation and visual harshness at the extremes.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="card-label">Guidance Value Reference — V1 &amp; V2 Models</span>
+      <table class="guidance-table">
+        <thead>
+          <tr>
+            <th>Range</th>
+            <th>Behaviour</th>
+            <th>Best Used For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="range-pill" style="background:#0d1f2a;color:var(--cyan);border:1px solid var(--cyan-dim);">2 – 6</span></td>
+            <td>Loose, interpretive. High creative freedom; dreamlike results.</td>
+            <td>Abstract art, landscapes, mood pieces</td>
+          </tr>
+          <tr>
+            <td><span class="range-pill" style="background:#1f1200;color:var(--amber);border:1px solid var(--amber-dim);">7 – 14</span></td>
+            <td>Balanced adherence. Reliable character and scene rendering.</td>
+            <td>General-purpose; the majority of prompts</td>
+          </tr>
+          <tr>
+            <td><span class="range-pill" style="background:#1a0a0f;color:var(--rose);border:1px solid #ff4d6d33;">15 – 20</span></td>
+            <td>Strict adherence. Sharper results but prone to colour artifacts.</td>
+            <td>Precise compositions; pair with Decrisper</td>
+          </tr>
+          <tr>
+            <td><span class="range-pill" style="background:#1a0a0f;color:#cc3d58;border:1px solid #ff4d6d22;">21+</span></td>
+            <td>Overly rigid. Unpredictable artifacts; generally counterproductive.</td>
+            <td>Experimental use only</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <span class="card-label">V3 Models — Different Defaults</span>
+      <div class="card-title">Newer Models Prefer Lower Guidance</div>
+      <div class="section-body" style="font-size:0.95rem;">
+        <p>If you are working with a V3-generation model, the recommended guidance range is considerably lower — around <code>5</code> to <code>6</code>. These models are trained to be far more responsive to prompts at lower values, meaning a setting that felt moderate on a V1 model may feel aggressive on a V3 one. Always consult the documentation for your specific model, as optimal defaults evolve across generations.</p>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Orbitron',sans-serif;font-size:1.05rem;color:#fff;margin:36px 0 16px;font-weight:700;">Supplemental Guidance Controls</h3>
+
+    <div class="dual">
+      <div class="dual-panel cyan">
+        <h4>Prompt Guidance Rescale</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">When guidance is set high on V3 models, colours can become over-saturated — a harsh, "deep-fried" effect with extreme contrast. The Rescale slider corrects this by rebalancing colour distribution without lowering guidance itself. Adjust it incrementally whenever high guidance values cause garish or unnatural colouring in your output.</p>
+      </div>
+      <div class="dual-panel amber">
+        <h4>Decrisper</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">Decrisper is a toggle designed to mitigate visual artifacts and harsh edges that manifest at higher guidance values. Unlike Rescale, it affects the image at any guidance level and can be used as a deliberate stylistic choice — some users prefer the softer, more organic quality it imparts even at moderate settings.</p>
+      </div>
+    </div>
+
+    <div class="callout cyan">
+      "When an image is largely correct but one small detail is off, try locking the seed and nudging the guidance value by a single point in either direction. This targeted adjustment often resolves minor issues without disrupting the overall composition."
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ S3 — SEED ═══════════════════════════════════ -->
+  <div class="divider reveal" id="s3">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 03 — The Seed System</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">03 / THE SEED SYSTEM</span>
+    <h2 class="section-title">Seeds — Reproducibility &amp; Controlled Iteration</h2>
+    <div class="section-body">
+      <p>Every image an AI generates begins from a unique random starting point — a specific pattern of noise that the model sculpts in response to your prompt. The number that initialises this random pattern is called the <strong>seed</strong>. Two prompts that are otherwise identical will produce the same image if they share the same seed, and entirely different images if their seeds differ.</p>
+      <p>This mechanism is one of the most practical tools in a prompter's workflow. By locking a seed after finding a composition you are satisfied with, you can make isolated, deliberate changes to your prompt — adding a tag, adjusting guidance, or modifying a style descriptor — and observe precisely how each change affects the image, without a randomly shifting starting point confounding your results.</p>
+    </div>
+
+    <div class="seed-demo">
+      <div class="seed-row">
+        <span class="seed-icon">🎲</span>
+        <div class="seed-text">
+          <strong>Random Seed (Default)</strong>
+          Each generation starts from a new random point. Results vary even with identical prompts and settings.
+        </div>
+        <div class="seed-val" style="background:#1a0a0f;color:var(--rose);border:1px solid #ff4d6d33;">Unlocked</div>
+      </div>
+      <div class="seed-row">
+        <span class="seed-icon">📌</span>
+        <div class="seed-text">
+          <strong>Locked Seed</strong>
+          The same starting noise is used every time. Changes to the prompt become the only variable — enabling precise, controlled iteration.
+        </div>
+        <div class="seed-val" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">Locked</div>
+      </div>
+      <div class="seed-row">
+        <span class="seed-icon">🔁</span>
+        <div class="seed-text">
+          <strong>Recalled Seed from History</strong>
+          Copy a seed from a past generation to revisit and refine a composition you produced in a previous session.
+        </div>
+        <div class="seed-val" style="background:#1f1200;color:var(--amber);border:1px solid var(--amber-dim);">Recalled</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>Seeds are typically displayed directly on generated images, embedded in filenames, or stored in the image's EXIF metadata. Whenever a generation produces a result worth building upon, note or copy the seed immediately — it is easy to lose track of during a rapid iteration session.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="line-label">Controlled Iteration Example</span>
+<span class="comment">// Generation 1 — Seed 847291 — Composition looks right but hair colour is wrong</span>
+<span class="hl">1girl</span>, <span class="hlG">flower field</span>, <span class="hlA">sunset</span>, <span class="hlR">best quality</span>
+
+<span class="comment">// Generation 2 — Seed 847291 (locked) — Only hair tag is added; everything else is fixed</span>
+<span class="hl">1girl</span>, <span class="hl">silver hair</span>, <span class="hlG">flower field</span>, <span class="hlA">sunset</span>, <span class="hlR">best quality</span>
+    </div>
+
+    <div class="highlight-box info">
+      <span class="icon">📋</span>
+      <div>To retrieve a seed from a previous session, navigate to your generation history, select the image in question, and copy the seed value from its detail or metadata panel. Most platforms surface this information prominently in the image viewer.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ S4 — STRENGTH & NOISE ═══════════════════════════════════ -->
+  <div class="divider reveal" id="s4">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 04 — Strength &amp; Noise</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">04 / STRENGTH &amp; NOISE</span>
+    <h2 class="section-title">Strength &amp; Noise — Transforming Existing Images</h2>
+    <div class="section-body">
+      <p>The settings discussed so far — Steps, Guidance, and Seed — govern how the AI generates an image from a blank starting point. Two additional controls become essential when you move into <strong>image-to-image</strong> workflows: that is, when you upload an existing image and ask the AI to modify or expand upon it.</p>
+    </div>
+
+    <div class="dual">
+      <div class="dual-panel cyan">
+        <h4>Strength</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">Determines how much the AI is permitted to depart from the uploaded image in response to your prompt. At maximum strength, the AI may reconstruct the composition substantially. At minimum strength, it treats the uploaded image as nearly untouchable, making only the subtlest prompt-driven adjustments.</p>
+      </div>
+      <div class="dual-panel amber">
+        <h4>Noise</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);">Controls the degree of randomness the AI may introduce into areas it is filling in — particularly sparse backgrounds or regions with minimal detail. Higher noise enables the model to invent richer, more varied content; lower noise preserves what exists and introduces very little that is new.</p>
+      </div>
+    </div>
+
+    <p style="margin:8px 0 8px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;">Strength × Noise — Outcome Matrix</p>
+
+    <div class="matrix">
+      <div class="matrix-cell matrix-header" style="background:var(--bg);"></div>
+      <div class="matrix-cell matrix-header" style="color:var(--cyan);">Low Noise</div>
+      <div class="matrix-cell matrix-header" style="color:var(--amber);">High Noise</div>
+
+      <div class="matrix-label" style="color:var(--cyan);">High Strength</div>
+      <div class="matrix-cell">
+        <div class="result-tag" style="background:#001f2e;color:var(--cyan);border:1px solid var(--cyan-dim);">Creative Redraw</div>
+        <p style="font-size:13px;color:var(--text-dim);">Composition may change substantially while retaining a clean, artifact-free finish.</p>
+      </div>
+      <div class="matrix-cell">
+        <div class="result-tag" style="background:#1f1000;color:var(--amber);border:1px solid var(--amber-dim);">Full Transformation</div>
+        <p style="font-size:13px;color:var(--text-dim);">Maximum creative departure. Useful for stylisation but risks incoherence and artifacts.</p>
+      </div>
+
+      <div class="matrix-label" style="color:var(--amber);">Low Strength</div>
+      <div class="matrix-cell">
+        <div class="result-tag" style="background:#0d1f10;color:#69db7c;border:1px solid #69db7c33;">Near-Perfect Copy</div>
+        <p style="font-size:13px;color:var(--text-dim);">Ideal for Enhance and Upscale operations where preserving the original is paramount.</p>
+      </div>
+      <div class="matrix-cell">
+        <div class="result-tag" style="background:#1a0a0f;color:var(--rose);border:1px solid #ff4d6d33;">Detail Injection</div>
+        <p style="font-size:13px;color:var(--text-dim);">Composition is mostly preserved, but the AI fills sparse regions with newly invented content.</p>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <p>These two controls interact in ways that are not always intuitive at first. A practical starting point is to begin with both settings low and raise them one at a time, observing the effect of each in isolation. This methodical approach prevents the common mistake of attributing an undesired change to the wrong setting.</p>
+    </div>
+
+    <div class="highlight-box warn">
+      <span class="icon">⚠️</span>
+      <div>Running multiple consecutive generations with high noise can compound artifacts — each pass introduces new randomness that incrementally degrades image coherence. If you intend to refine an image across several generations, keep noise moderate and lower it gradually rather than repeating at maximum values.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ S5 — ENHANCE & RESOLUTION ═══════════════════════════════════ -->
+  <div class="divider reveal" id="s5">
+    <div class="divider-line"></div>
+    <div class="divider-label">Section 05 — Enhance &amp; Resolution</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="reveal">
+    <span class="section-num">05 / ENHANCE &amp; RESOLUTION</span>
+    <h2 class="section-title">The Enhance Feature &amp; Resolution Strategy</h2>
+    <div class="section-body">
+      <p>Once you have a generation you are satisfied with at a modest step count, most platforms offer an <strong>Enhance</strong> feature — a second-pass processing step that applies your prompt again to the existing image, refining it further without restarting from noise. Think of it as giving the AI an opportunity to revisit and polish its own work with fresh attention.</p>
+      <p>The Enhance feature typically combines Strength and Noise into a single <strong>Magnitude</strong> slider for simplicity, though most platforms also expose the two settings individually for finer control. A low-magnitude pass will tighten details and smooth artifacts while remaining close to the original composition. A higher-magnitude pass introduces more significant refinements — and proportionally more risk of unwanted divergence.</p>
+    </div>
+
+    <div class="enhance-flow">
+      <div class="flow-step">
+        <span class="f-icon">✍️</span>
+        <div class="f-title">Write Prompt</div>
+        <div class="f-desc">Define subject, setting, style, and quality tags as in Part I.</div>
+      </div>
+      <div class="flow-step">
+        <span class="f-icon">⚙️</span>
+        <div class="f-title">Generate at Low Steps</div>
+        <div class="f-desc">Use 20–28 steps to explore compositions efficiently.</div>
+      </div>
+      <div class="flow-step">
+        <span class="f-icon">📌</span>
+        <div class="f-title">Lock the Seed</div>
+        <div class="f-desc">Preserve your composition before applying any enhancements.</div>
+      </div>
+      <div class="flow-step">
+        <span class="f-icon">✨</span>
+        <div class="f-title">Run Enhance</div>
+        <div class="f-desc">Apply a low-magnitude pass to refine detail without disruption.</div>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Orbitron',sans-serif;font-size:1.05rem;color:#fff;margin:36px 0 14px;font-weight:700;">Resolution &amp; Aspect Ratio</h3>
+
+    <div class="section-body">
+      <p>The resolution and aspect ratio of your canvas are not merely technical parameters — they actively shape the composition the AI produces. A tall vertical canvas naturally encourages full-body character framing and emphasises height. A wide horizontal canvas favours landscape scenes and group shots where subjects appear side by side. Choosing your canvas dimensions before generating is a deliberate creative decision, not an afterthought.</p>
+    </div>
+
+    <div class="dual">
+      <div class="dual-panel cyan">
+        <h4>Horizontal / Landscape</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);margin-bottom:14px;">Wider compositions suit group scenes, environments, and panoramic settings. The AI naturally distributes characters side by side and gives environmental elements more horizontal room to develop.</p>
+        <div style="background:#080b12;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);">
+          Common ratios: <span style="color:var(--cyan);">16:9 &nbsp;·&nbsp; 3:2 &nbsp;·&nbsp; 4:3</span>
+        </div>
+      </div>
+      <div class="dual-panel amber">
+        <h4>Vertical / Portrait</h4>
+        <p style="font-size:0.93rem;color:var(--text-dim);margin-bottom:14px;">Taller canvases encourage full-body character renders. Note that using the <code class="amber" style="font-size:12px;">tall</code> tag alone is often insufficient — pairing it with a vertical resolution produces far more consistent results.</p>
+        <div style="background:#080b12;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);">
+          Common ratios: <span style="color:var(--amber);">9:16 &nbsp;·&nbsp; 2:3 &nbsp;·&nbsp; 4:5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green" style="margin-top:36px;">
+      <span class="card-label">Part II — Recommended Workflow</span>
+      <div class="card-title">A Repeatable Process for Every Session</div>
+      <ul class="step-list" style="margin-top:16px;">
+        <li><p><strong>Set your canvas resolution</strong> before generating. Choose an aspect ratio that matches the compositional intent of your scene — landscape for environments, portrait for characters.</p></li>
+        <li><p><strong>Generate at 20–28 steps</strong> with a guidance value of 7–12 to explore compositions efficiently and without unnecessary resource expenditure.</p></li>
+        <li><p><strong>Lock the seed</strong> of any generation showing genuine promise. Note it down before moving on — seeds are easy to lose track of during rapid sessions.</p></li>
+        <li><p><strong>Iterate with the seed locked</strong>, adjusting a single element of your prompt or one setting at a time to isolate the effect of each change.</p></li>
+        <li><p><strong>Raise steps and apply Enhance</strong> only once the composition, characters, and scene elements are satisfying at the structural level.</p></li>
+        <li><p><strong>Use low-magnitude Enhance passes</strong> to refine detail, reserving high-magnitude passes for intentional and substantial stylistic transformation.</p></li>
+      </ul>
+    </div>
+
+    <div class="card rose" style="margin-top:28px;">
+      <span class="card-label">Part II — Summary</span>
+      <div class="card-title">Five Controls, One Coherent System</div>
+      <div class="section-body" style="font-size:0.95rem;">
+        <p><strong>Steps</strong> determines how thoroughly the AI refines your image — use 20–28 for exploration and higher values for final renders. <strong>Prompt Guidance</strong> sets the AI's adherence to your text — a value of 7–12 is a reliable starting point for most models. <strong>Seeds</strong> give you reproducibility — lock any composition worth building upon. <strong>Strength and Noise</strong> govern image-to-image transformation — treat them as independent variables and adjust methodically. <strong>Resolution</strong> shapes composition before the AI even begins — choose your aspect ratio deliberately.</p>
+        <p style="margin-top:14px;">Together, these five controls form a coherent system. The prompt defines <em>what</em> the AI creates; the settings define <em>how</em> it creates it. Mastering both is what transforms AI image generation from a lottery into a genuine craft.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+  <footer class="guide-footer reveal">
+    <div>
+      <div style="font-family:'Orbitron',monospace;color:var(--text-dim);font-size:10px;letter-spacing:0.2em;">PART II OF IV</div>
+      <div style="margin-top:6px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;">Settings &amp; Controls · Complete</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:6px;">COMING NEXT</div>
+      <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--amber);letter-spacing:0.05em;">Part III → Advanced Techniques &amp; Character Creation</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = Math.min(pct, 100) + '%';
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  reveals.forEach(r => obs.observe(r));
+
+  // Nav dots
+  const sections = ['s0','s1','s2','s3','s4','s5'];
+  const labels   = ['Intro','Steps','Prompt Guidance','Seeds','Strength & Noise','Enhance & Resolution'];
+  const navEl    = document.getElementById('navDots');
+
+  sections.forEach((id, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.title = labels[i];
+    dot.onclick = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    navEl.appendChild(dot);
+  });
+
+  const sectionEls = sections.map(id => document.getElementById(id));
+  const dotEls = navEl.querySelectorAll('.nav-dot');
+
+  const dotObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const i = sectionEls.indexOf(e.target);
+      if (i >= 0 && e.isIntersecting) {
+        dotEls.forEach(d => d.classList.remove('active'));
+        dotEls[i]?.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -40% 0px' });
+
+  sectionEls.forEach(el => el && dotObs.observe(el));
+</script>
+</body>
+</html>
